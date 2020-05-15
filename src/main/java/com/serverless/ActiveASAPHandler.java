@@ -1,6 +1,9 @@
 package com.serverless;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
@@ -24,42 +27,87 @@ public class ActiveASAPHandler implements RequestHandler<Map<String, Object>, Ap
 
 	private final Logger LOG = LogManager.getLogger(this.getClass());
 
+	public static boolean validateDate(String strDate)
+	{
+		if (!strDate.trim().equals("")) {
+			SimpleDateFormat sdfrmt = new SimpleDateFormat("yyyy-MM-dd");
+			sdfrmt.setLenient(false);
+			try {
+				Date javaDate = sdfrmt.parse(strDate);
+			} catch (ParseException e) {
+				return false;
+			}
+		}
+		return true;
+	}
+
 	@Override
 	public ApiGatewayResponse handleRequest(Map<String, Object> input, Context context) {
 		//LOG.info("received: {}", input);
 
-		DBCredentials dbCreds = new DBCredentials();
-		dbCreds.setDbHost("covid-oracle.cewagdn2zv2j.us-west-2.rds.amazonaws.com");
-		dbCreds.setDbPort("1521");
-		dbCreds.setUserName("admin");
-		dbCreds.setPassword("8iEkGjQgFJzOblCihFaz");
-		dbCreds.setDbName("orcl");
-
-		DBConnection dbConnection = new DBConnection();
-		Connection connection = dbConnection.getConnection(dbCreds);		
+		String startDate = "";
+		String endDate = "";
 
 		int statusCode = 200;
 		JSONObject retObject = new JSONObject();
 		JSONObject data = new JSONObject();
 
-		String query = "SELECT\n" +
-				"\tcount(DISTINCT (CASE_NUMBER)) AS \"Active ASAP Requests\"\n" +
-				"FROM\n" +
-				"\tADMIN.\"Adjusted_Data\"\n" +
-				"WHERE\n" +
-				"\t\"ASAP Status\" = 'Active'";
+		Map<String, String> queryStringParameters = (Map<String, String>) input.get("queryStringParameters");
+		if(queryStringParameters != null ){
+			startDate = queryStringParameters.get("start");
+			endDate = queryStringParameters.get("end");
+		}
+
+		if(validateDate(startDate) && validateDate(endDate)) {
+			DBCredentials dbCreds = new DBCredentials();
+			dbCreds.setDbHost("covid-oracle.cewagdn2zv2j.us-west-2.rds.amazonaws.com");
+			dbCreds.setDbPort("1521");
+			dbCreds.setUserName("admin");
+			dbCreds.setPassword("8iEkGjQgFJzOblCihFaz");
+			dbCreds.setDbName("orcl");
+
+			DBConnection dbConnection = new DBConnection();
+			Connection connection = dbConnection.getConnection(dbCreds);
+
+			String query = "SELECT\n" +
+					"\tcount(DISTINCT (CASE_NUMBER)) AS \"Active ASAP Requests\"\n" +
+					"FROM\n" +
+					"\tADMIN.\"Adjusted_Data\"\n" +
+					"WHERE\n" +
+					"\t\"ASAP Status\" = 'Active'";
+
+			if (startDate != "") {
+				query += "\nWHERE TO_DATE(TO_NUMBER(TO_CHAR(\"ASAP Created\", 'YYYYDDMMHH24MISS')), 'YYYYMMDDHH24MISS') >= TO_DATE('" + startDate + "','yyyy-MM-dd')";
+			}
+			if (endDate != "") {
+				query += "\nAND TO_DATE(TO_NUMBER(TO_CHAR(\"ASAP Created\", 'YYYYDDMMHH24MISS')), 'YYYYMMDDHH24MISS') <= TO_DATE('" + endDate + "','yyyy-MM-dd')";
+			}
+			LOG.info("query: {}", query);
+
+			try {
+				if (Optional.ofNullable(connection).isPresent()) {
+					int orderCount = runQuery(connection, query);
+					data.put("count", orderCount);
+				} else {
+					statusCode = 501;
+					data.put("message", "Server error!");
+				}
+			} catch (JSONException e) {
+				LOG.info("Error: {}", e);
+			}
+		} else {
+			statusCode = 400;
+			try {
+				data.put("message", "Invalid date format");
+			} catch (JSONException e) {
+				LOG.info("Error: {}", e);
+			}
+		}
+
 		try {
-			if (Optional.ofNullable(connection).isPresent()) {
-				int orderCount = runQuery(connection, query);
-				data.put("count", orderCount);
-			}
-			else {
-				statusCode = 501;
-				data.put("message", "Server error!");
-			}
 			retObject.put("data", data);
 		} catch (JSONException e) {
-			LOG.info("Error: {}", e);	
+			LOG.info("Error: {}", e);
 		}
 		
 		Response responseBody = new Response(retObject, statusCode);

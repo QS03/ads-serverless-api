@@ -91,6 +91,11 @@ functions:
           path: /asap/total
           method: get
           cors: true
+          request:
+            parameters:
+              querystrings:
+                start: true
+                end: true
 
   activeASAP:
     handler: com.serverless.ActiveASAPHandler
@@ -100,6 +105,11 @@ functions:
           path: /asap/active
           method: get
           cors: true
+          request:
+            parameters:
+              querystrings:
+                start: true
+                end: true
 
   completedASAP:
     handler: com.serverless.CompletedASAPHandler
@@ -109,6 +119,11 @@ functions:
           path: /asap/completed
           method: get
           cors: true
+          request:
+            parameters:
+              querystrings:
+                start: true
+                end: true
 
   averageASAPCycleTime:
     handler: com.serverless.AverageASAPCycleTimeHandler
@@ -118,6 +133,11 @@ functions:
           path: /asap/average-cycle-time
           method: get
           cors: true
+          request:
+            parameters:
+              querystrings:
+                start: true
+                end: true
 
   fastestASAPTotalCycleTime:
     handler: com.serverless.FastestASAPTotalCycleTimeHandler
@@ -127,3 +147,8 @@ functions:
           path: /asap/fastest-total-cycle-time
           method: get
           cors: true
+          request:
+            parameters:
+              querystrings:
+                start: true
+                end: true
