@@ -1,0 +1,129 @@
+# Welcome to Serverless!
+#
+# This file is the main config file for your service.
+# It's very minimal at this point and uses default values.
+# You can always add more config options for more control.
+# We've included some commented out config examples here.
+# Just uncomment any of them to get that config option.
+#
+# For full config options, check the docs:
+#    docs.serverless.com
+#
+# Happy Coding!
+
+service: ads-sls-api
+# app and org for use with dashboard.serverless.com
+#app: your-app-name
+#org: your-org-name
+
+# You can pin your service to only deploy with a specific Serverless version
+# Check out our docs for more details
+# frameworkVersion: "=X.X.X"
+
+provider:
+  name: aws
+  region: us-west-2
+  profile: impakt
+  runtime: java8
+  stage: ${opt:stage, 'dev'}
+
+# you can overwrite defaults here
+#  stage: dev
+#  region: us-east-1
+
+# you can add statements to the Lambda function's IAM Role here
+#  iamRoleStatements:
+#    - Effect: "Allow"
+#      Action:
+#        - "s3:ListBucket"
+#      Resource: { "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "ServerlessDeploymentBucket" } ] ]  }
+#    - Effect: "Allow"
+#      Action:
+#        - "s3:PutObject"
+#      Resource:
+#        Fn::Join:
+#          - ""
+#          - - "arn:aws:s3:::"
+#            - "Ref" : "ServerlessDeploymentBucket"
+#            - "/*"
+
+# you can define service wide environment variables here
+#  environment:
+#    variable1: value1
+
+# you can add packaging information here
+package:
+  artifact: target/${self:service}-${self:provider.stage}.jar
+
+functions:
+  numberOfCustomers:
+    handler: com.serverless.CustomersHandler
+    timeout: 30
+    events:
+      - http:
+          path: /number-of-customers
+          method: get
+          cors: true
+
+  numberOfOrders:
+    handler: com.serverless.OrdersHandler
+    timeout: 30
+    events:
+      - http:
+          path: /number-of-orders
+          method: get
+          cors: true
+
+  salesByYear:
+    handler: com.serverless.SalesHandler
+    timeout: 30
+    events:
+      - http:
+          path: /sales-by-year
+          method: get
+          cors: true
+
+  totalASAP:
+    handler: com.serverless.TotalASAPHandler
+    timeout: 30
+    events:
+      - http:
+          path: /asap/total
+          method: get
+          cors: true
+
+  activeASAP:
+    handler: com.serverless.ActiveASAPHandler
+    timeout: 30
+    events:
+      - http:
+          path: /asap/active
+          method: get
+          cors: true
+
+  completedASAP:
+    handler: com.serverless.CompletedASAPHandler
+    timeout: 30
+    events:
+      - http:
+          path: /asap/completed
+          method: get
+          cors: true
+
+  averageASAPCycleTime:
+    handler: com.serverless.AverageASAPCycleTimeHandler
+    timeout: 30
+    events:
+      - http:
+          path: /asap/average-cycle-time
+          method: get
+          cors: true
+
+  fastestASAPTotalCycleTime:
+    handler: com.serverless.FastestASAPTotalCycleTimeHandler
+    timeout: 30
+    events:
+      - http:
+          path: /asap/fastest-total-cycle-time
+          method: get
+          cors: true
