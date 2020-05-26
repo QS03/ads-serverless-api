@@ -16,10 +16,6 @@ service: ads-sls-api
 #app: your-app-name
 #org: your-org-name
 
-# You can pin your service to only deploy with a specific Serverless version
-# Check out our docs for more details
-# frameworkVersion: "=X.X.X"
-
 provider:
   name: aws
   region: us-west-2
@@ -27,29 +23,6 @@ provider:
   runtime: java8
   stage: ${opt:stage, 'dev'}
 
-# you can overwrite defaults here
-#  stage: dev
-#  region: us-east-1
-
-# you can add statements to the Lambda function's IAM Role here
-#  iamRoleStatements:
-#    - Effect: "Allow"
-#      Action:
-#        - "s3:ListBucket"
-#      Resource: { "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "ServerlessDeploymentBucket" } ] ]  }
-#    - Effect: "Allow"
-#      Action:
-#        - "s3:PutObject"
-#      Resource:
-#        Fn::Join:
-#          - ""
-#          - - "arn:aws:s3:::"
-#            - "Ref" : "ServerlessDeploymentBucket"
-#            - "/*"
-
-# you can define service wide environment variables here
-#  environment:
-#    variable1: value1
 
 # you can add packaging information here
 package:
@@ -61,7 +34,7 @@ functions:
     timeout: 30
     events:
       - http:
-          path: /number-of-customers
+          path: /sales-data-sample/number-of-customers
           method: get
           cors: true
 
@@ -70,7 +43,7 @@ functions:
     timeout: 30
     events:
       - http:
-          path: /number-of-orders
+          path: /sales-data-sample/number-of-orders
           method: get
           cors: true
 
@@ -79,30 +52,16 @@ functions:
     timeout: 30
     events:
       - http:
-          path: /sales-by-year
+          path: /sales-data-sample/sales-by-year
           method: get
           cors: true
 
-  totalASAP:
-    handler: com.serverless.TotalASAPHandler
+  heroMetric:
+    handler: com.serverless.HeroMetricHandler
     timeout: 30
     events:
       - http:
-          path: /asap/total
-          method: get
-          cors: true
-          request:
-            parameters:
-              querystrings:
-                start: true
-                end: true
-
-  activeASAP:
-    handler: com.serverless.ActiveASAPHandler
-    timeout: 30
-    events:
-      - http:
-          path: /asap/active
+          path: /adjusted-data/hero-metric
           method: get
           cors: true
           request:
@@ -111,12 +70,12 @@ functions:
                 start: true
                 end: true
 
-  completedASAP:
-    handler: com.serverless.CompletedASAPHandler
+  heroStats:
+    handler: com.serverless.HeroStatsHandler
     timeout: 30
     events:
       - http:
-          path: /asap/completed
+          path: /sample-data-2/hero-stats
           method: get
           cors: true
           request:
@@ -125,12 +84,21 @@ functions:
                 start: true
                 end: true
 
-  averageASAPCycleTime:
-    handler: com.serverless.AverageASAPCycleTimeHandler
+  inspectorRoles:
+    handler: com.serverless.InspectorRolesHandler
     timeout: 30
     events:
       - http:
-          path: /asap/average-cycle-time
+          path: /sample-data-2/inspector-roles
+          method: get
+          cors: true
+
+  inspectorSteps:
+    handler: com.serverless.InspectorStepsHandler
+    timeout: 30
+    events:
+      - http:
+          path: /sample-data-2/inspector-steps
           method: get
           cors: true
           request:
@@ -139,12 +107,26 @@ functions:
                 start: true
                 end: true
 
-  fastestASAPTotalCycleTime:
-    handler: com.serverless.FastestASAPTotalCycleTimeHandler
+  roleDurations:
+    handler: com.serverless.RoleDurationsHandler
     timeout: 30
     events:
       - http:
-          path: /asap/fastest-total-cycle-time
+          path: /sample-data-2/role-durations
+          method: get
+          cors: true
+          request:
+            parameters:
+              querystrings:
+                start: true
+                end: true
+
+  stepDurations:
+    handler: com.serverless.StepDurationsHandler
+    timeout: 30
+    events:
+      - http:
+          path: /sample-data-2/step-durations
           method: get
           cors: true
           request:

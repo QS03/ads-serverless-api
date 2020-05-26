@@ -14,7 +14,6 @@ public class DBConnection {
 		String url = "jdbc:oracle:thin:@//" + dbCreds.getDbHost() + ":" + dbCreds.getDbPort() + "/" + dbCreds.getDbName();
 		try {
 			connection = DriverManager.getConnection(url, dbCreds.getUserName(), dbCreds.getPassword());
-			System.out.println("Created connection object successfully. Object: " + connection);
 		} catch (SQLException e) {
 			e.printStackTrace();
 			System.out.println("Could not get a connection to database.");

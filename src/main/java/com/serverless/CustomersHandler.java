@@ -27,7 +27,7 @@ public class CustomersHandler implements RequestHandler<Map<String, Object>, Api
 
 	@Override
 	public ApiGatewayResponse handleRequest(Map<String, Object> input, Context context) {
-		// LOG.info("received: {}", input);				
+		LOG.info("input: {}", input);
 
 		DBCredentials dbCreds = new DBCredentials();
 		dbCreds.setDbHost("covid-oracle.cewagdn2zv2j.us-west-2.rds.amazonaws.com");
@@ -55,7 +55,7 @@ public class CustomersHandler implements RequestHandler<Map<String, Object>, Api
 			}
 			retObject.put("data", data);
 		} catch (JSONException e) {
-			LOG.info("Error: {}", e);	
+			LOG.info("Error: {}", e);
 		}
 		
 		Response responseBody = new Response(retObject, statusCode);
