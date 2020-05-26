@@ -52,13 +52,54 @@ public class StepDurationsHandler implements RequestHandler<Map<String, Object>,
             Connection connection = dbConnection.getConnection(dbCreds);
 
 
-            String query = "\n" +
-                    "--For Step Average, min, max\n" +
+            String query = "--For Step Average, min, max\n" +
                     "SELECT\n" +
-                    "\t\"Step Display Name\",\n" +
-                    "\tAVG(\"Cycle Time - Days\") AS \"Average Step Duration\",\n" +
-                    "\tMIN(\"Cycle Time - Days\") AS \"Step Min\",\n" +
-                    "\tMAX(\"Cycle Time - Days\") AS \"Step Max\"\n" +
+                    "\t\"Step Display Name\" AS \"name\",\n" +
+                    "\tAVG(\"Cycle Time - Days\") AS \"averageDuration\",\n" +
+                    "\tMIN(\"Cycle Time - Days\") AS \"min\",\n" +
+                    "\tMAX(\"Cycle Time - Days\") AS \"max\",\n" +
+                    "\tCASE WHEN \"Step Display Name\" = 'Step Display Name 2' THEN\n" +
+                    "\t\t1\n" +
+                    "\tWHEN \"Step Display Name\" = 'Step Display Name 3' THEN\n" +
+                    "\t\t1\n" +
+                    "\tWHEN \"Step Display Name\" = 'Step Display Name 4' THEN\n" +
+                    "\t\t1\n" +
+                    "\tWHEN \"Step Display Name\" = 'Step Display Name 5' THEN\n" +
+                    "\t\t1\n" +
+                    "\tWHEN \"Step Display Name\" = 'Step Display Name 6' THEN\n" +
+                    "\t\t1\n" +
+                    "\tWHEN \"Step Display Name\" = 'Step Display Name 7' THEN\n" +
+                    "\t\t1\n" +
+                    "\tWHEN \"Step Display Name\" = 'Step Display Name 8' THEN\n" +
+                    "\t\t1\n" +
+                    "\tWHEN \"Step Display Name\" = 'Step Display Name 9' THEN\n" +
+                    "\t\t1\n" +
+                    "\tWHEN \"Step Display Name\" = 'Step Display Name 10' THEN\n" +
+                    "\t\t1\n" +
+                    "\tWHEN \"Step Display Name\" = 'Step Display Name 12' THEN\n" +
+                    "\t\t1\n" +
+                    "\tEND AS \"standardMin\",\n" +
+                    "\tCASE WHEN \"Step Display Name\" = 'Step Display Name 2' THEN\n" +
+                    "\t\t3\n" +
+                    "\tWHEN \"Step Display Name\" = 'Step Display Name 3' THEN\n" +
+                    "\t\t3\n" +
+                    "\tWHEN \"Step Display Name\" = 'Step Display Name 4' THEN\n" +
+                    "\t\t1\n" +
+                    "\tWHEN \"Step Display Name\" = 'Step Display Name 5' THEN\n" +
+                    "\t\t3\n" +
+                    "\tWHEN \"Step Display Name\" = 'Step Display Name 6' THEN\n" +
+                    "\t\t1\n" +
+                    "\tWHEN \"Step Display Name\" = 'Step Display Name 7' THEN\n" +
+                    "\t\t3\n" +
+                    "\tWHEN \"Step Display Name\" = 'Step Display Name 8' THEN\n" +
+                    "\t\t3\n" +
+                    "\tWHEN \"Step Display Name\" = 'Step Display Name 9' THEN\n" +
+                    "\t\t3\n" +
+                    "\tWHEN \"Step Display Name\" = 'Step Display Name 10' THEN\n" +
+                    "\t\t1\n" +
+                    "\tWHEN \"Step Display Name\" = 'Step Display Name 12' THEN\n" +
+                    "\t\t3\n" +
+                    "\tEND AS \"standardMax\"\n" +
                     "FROM (\n" +
                     "\tSELECT\n" +
                     "\t\tCASE_NUMBER,\n" +
@@ -66,15 +107,15 @@ public class StepDurationsHandler implements RequestHandler<Map<String, Object>,
                     "\t\t\"Step Display Name\",\n" +
                     "\t\t\"Date In\",\n" +
                     "\t\t\"Date Out\",\n" +
-                    "\t\tCASE WHEN \"Date Out\" IS NULL AND \"Date In\" IS NOT NULL \n" +
-                    "\t\tTHEN\n" +
+                    "\t\tCASE WHEN \"Date Out\" IS NULL\n" +
+                    "\t\t\tAND \"Date In\" IS NOT NULL THEN\n" +
                     "\t\t\ttrunc(cast(CURRENT_TIMESTAMP AS date) - \"Date In\", 2)\n" +
                     "\t\tELSE\n" +
                     "\t\t\tCAST(\"Cycle Time - Days\" AS NUMBER)\n" +
                     "\t\tEND AS \"Cycle Time - Days\",\n" +
-                    "\t\tCASE WHEN \"Date Out\" IS NULL AND \"Date In\" IS NOT NULL \n" +
-                    "\t\tTHEN\n" +
-                    "\t\t\ttrunc((cast(CURRENT_TIMESTAMP AS date) - \"Date In\")*24, 2)\n" +
+                    "\t\tCASE WHEN \"Date Out\" IS NULL\n" +
+                    "\t\t\tAND \"Date In\" IS NOT NULL THEN\n" +
+                    "\t\t\ttrunc((cast(CURRENT_TIMESTAMP AS date) - \"Date In\") * 24, 2)\n" +
                     "\t\tELSE\n" +
                     "\t\t\tCAST(\"Cycle Time - Hours\" AS NUMBER)\n" +
                     "\t\tEND AS \"Cycle Time - Hours\",\n" +
@@ -140,10 +181,12 @@ public class StepDurationsHandler implements RequestHandler<Map<String, Object>,
             JSONArray result_array = new JSONArray();
             while (rs.next()){
                 JSONObject item = new JSONObject();
-                item.put("Step Display Name", rs.getString("Step Display Name"));
-                item.put("Average Step Duration", rs.getFloat("Average Step Duration"));
-                item.put("Step Min", rs.getFloat("Step Min"));
-                item.put("Step Max", rs.getFloat("Step Max"));
+                item.put("name", rs.getString("name"));
+                item.put("averageDuration", rs.getFloat("averageDuration"));
+                item.put("min", rs.getFloat("min"));
+                item.put("max", rs.getFloat("max"));
+                item.put("standardMin", rs.getFloat("standardMin"));
+                item.put("standardMax", rs.getFloat("standardMax"));
                 result_array.put(item);
             }
             LOG.info("Counts: {}", result_array.length());

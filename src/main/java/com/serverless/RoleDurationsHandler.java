@@ -52,12 +52,29 @@ public class RoleDurationsHandler implements RequestHandler<Map<String, Object>,
             Connection connection = dbConnection.getConnection(dbCreds);
 
 
-            String query = "" +
-                    "SELECT\n" +
-                    "\tCASE_NUMBER,\n" +
-                    "\t\"Role\",\n" +
-                    "\tSUM(\"Cycle Time - Days\") AS \"Cycle Time - Days\",\n" +
-                    "\tSUM(\"Cycle Time - Hours\") AS \"Cycle Time - Hours\"\n" +
+            String query = "SELECT\n" +
+                    "\t\"Role\" AS \"name\",\n" +
+                    "\tAVG(\"Cycle Time - Days\") AS \"averageDuration\",\n" +
+                    "\tMIN(\"Cycle Time - Days\") AS \"min\",\n" +
+                    "\tMAX(\"Cycle Time - Days\") AS \"max\",\n" +
+                    "\tCASE WHEN \"Role\" = 'Role 2' THEN\n" +
+                    "\t\t3\n" +
+                    "\tWHEN \"Role\" = 'Role 3' THEN\n" +
+                    "\t\t2\n" +
+                    "\tWHEN \"Role\" = 'Role 4' THEN\n" +
+                    "\t\t3\n" +
+                    "\tWHEN \"Role\" = 'Role 5' THEN\n" +
+                    "\t\t1\n" +
+                    "\tEND AS \"standardMin\",\n" +
+                    "\tCASE WHEN \"Role\" = 'Role 2' THEN\n" +
+                    "\t\t9\n" +
+                    "\tWHEN \"Role\" = 'Role 3' THEN\n" +
+                    "\t\t4\n" +
+                    "\tWHEN \"Role\" = 'Role 4' THEN\n" +
+                    "\t\t6\n" +
+                    "\tWHEN \"Role\" = 'Role 5' THEN\n" +
+                    "\t\t3\n" +
+                    "\tEND AS \"standardMax\"\n" +
                     "FROM (\n" +
                     "\tSELECT\n" +
                     "\t\tCASE_NUMBER,\n" +
@@ -77,12 +94,19 @@ public class RoleDurationsHandler implements RequestHandler<Map<String, Object>,
                     "\t\tEND AS \"Cycle Time - Hours\",\n" +
                     "\t\t\"ASAP Status\"\n" +
                     "\tFROM\n" +
-                    "\t\tADMIN. \"sample_data_2\")\n" +
+                    "\t\tADMIN. \"sample_data_2\"\n" +
+                    "\tWHERE\n" +
+                    "\t\t\"Role\" IS NOT NULL\n" +
+                    "\t\tAND CASE WHEN \"Date Out\" IS NULL\n" +
+                    "\t\t\tAND \"Date In\" IS NOT NULL THEN\n" +
+                    "\t\t\ttrunc(cast(CURRENT_TIMESTAMP AS date) - \"Date In\", 2)\n" +
+                    "\t\tELSE\n" +
+                    "\t\t\tCAST(\"Cycle Time - Days\" AS NUMBER)\n" +
+                    "\t\tEND < 10000)\n" +
                     "WHERE\n" +
                     String.format("\t\"ASAP CREATED\" >= TO_DATE('%s', 'yyyy-MM-dd')\n", startDate) +
                     String.format("\tAND \"ASAP CREATED\" < TO_DATE('%s', 'yyyy-MM-dd')\n", endDate) +
                     "GROUP BY\n" +
-                    "\tCASE_NUMBER,\n" +
                     "\t\"Role\"";
 
             LOG.info("Query: {}", query);
@@ -135,10 +159,14 @@ public class RoleDurationsHandler implements RequestHandler<Map<String, Object>,
             JSONArray result_array = new JSONArray();
             while (rs.next()){
                 JSONObject item = new JSONObject();
-                item.put("CASE_NUMBER", rs.getString("CASE_NUMBER"));
-                item.put("Role", rs.getString("Role"));
-                item.put("Cycle Time - Days", rs.getFloat("Cycle Time - Days"));
-                item.put("Cycle Time - Hours", rs.getFloat("Cycle Time - Hours"));
+                item.put("name", rs.getString("name"));
+                item.put("averageDuration", rs.getFloat("averageDuration"));
+                item.put("min", rs.getFloat("min"));
+                item.put("max", rs.getFloat("max"));
+                item.put("max", rs.getFloat("max"));
+                item.put("standardMin", rs.getFloat("standardMin"));
+                item.put("standardMax", rs.getFloat("standardMax"));
+
                 result_array.put(item);
             }
             LOG.info("Counts: {}", result_array.length());
