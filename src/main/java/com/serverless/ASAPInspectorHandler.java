@@ -342,6 +342,7 @@ public class ASAPInspectorHandler implements RequestHandler<Map<String, Object>,
                     JSONArray roles = (JSONArray) data.get("roles");
                     JSONObject role = new JSONObject();
                     if(resultItem.has("name"))role.put("name", resultItem.getString("name"));
+                    if(resultItem.has("type"))role.put("type", resultItem.getString("type"));
                     if(resultItem.has("color"))role.put("color", resultItem.getString("color"));
                     if(resultItem.has("durationDays"))role.put("durationDays", resultItem.getDouble("durationDays"));
                     if(resultItem.has("standardMin"))role.put("standardMin", resultItem.getDouble("standardMin"));
@@ -352,6 +353,7 @@ public class ASAPInspectorHandler implements RequestHandler<Map<String, Object>,
                     JSONArray steps = (JSONArray) data.get("steps");
                     JSONObject step = new JSONObject();
                     if(resultItem.has("name"))step.put("name", resultItem.getString("name"));
+                    if(resultItem.has("type"))step.put("type", resultItem.getString("type"));
                     if(resultItem.has("color"))step.put("color", resultItem.getString("color"));
                     if(resultItem.has("durationDays"))step.put("durationDays", resultItem.getDouble("durationDays"));
                     if(resultItem.has("standardMin"))step.put("standardMin", resultItem.getDouble("standardMin"));
@@ -371,6 +373,8 @@ public class ASAPInspectorHandler implements RequestHandler<Map<String, Object>,
                 JSONArray steps = new JSONArray();
                 JSONObject item = new JSONObject();
                 if(resultItem.has("name"))item.put("name", resultItem.getString("name"));
+                if(resultItem.has("type"))item.put("type", resultItem.getString("type"));
+                if(resultItem.has("color"))item.put("color", resultItem.getString("color"));
                 if(resultItem.has("durationDays"))item.put("durationDays", resultItem.getDouble("durationDays"));
                 if(resultItem.has("standardMin"))item.put("standardMin", resultItem.getDouble("standardMin"));
                 if(resultItem.has("standardMax"))item.put("standardMax", resultItem.getDouble("standardMax"));
@@ -396,8 +400,8 @@ public class ASAPInspectorHandler implements RequestHandler<Map<String, Object>,
 
     private JSONArray getActivityLegend(Connection connection) throws JSONException {
         JSONArray result = new JSONArray();
-        JSONObject obj = new JSONObject();
 
+        JSONObject durationByStep = new JSONObject();
         String query = "--title: \"ASAP Durations by Step (Days)\"\n" +
                 "select \n" +
                 "\tdistinct(\"Step Display Name\") ,\n" +
@@ -413,9 +417,9 @@ public class ASAPInspectorHandler implements RequestHandler<Map<String, Object>,
                 "from \"ADMIN\".\"sample_data_2\"";
 
         JSONArray ASAPDurationByStep = getDurationsStep(connection, query);
-        obj.put("title", "ASAP Durations by Step (Days)");
-        obj.put("rows", ASAPDurationByStep);
-        result.put(obj);
+        durationByStep.put("title", "ASAP Durations by Step (Days)");
+        durationByStep.put("rows", ASAPDurationByStep);
+        result.put(durationByStep);
 
         query = " {\n" +
                 "   \"title\": \"Total Time\",\n" +
@@ -428,6 +432,7 @@ public class ASAPInspectorHandler implements RequestHandler<Map<String, Object>,
                 "}";
         result.put(new JSONObject(query));
 
+        JSONObject durationByRole = new JSONObject();
         query = "--title: \"ASAP Durations by Role (Days)\"\n" +
                 "select \n" +
                 "\tdistinct(\"Role\") ,\n" +
@@ -439,9 +444,9 @@ public class ASAPInspectorHandler implements RequestHandler<Map<String, Object>,
                 "\tEND as \"color\"\n" +
                 "from \"ADMIN\".\"sample_data_2\" ";
         JSONArray ASAPDurationByRole = getDurationsRole(connection, query);
-        obj.put("title", "ASAP Durations by Role (Days)");
-        obj.put("rows", ASAPDurationByRole);
-        result.put(obj);
+        durationByRole.put("title", "ASAP Durations by Role (Days)");
+        durationByRole.put("rows", ASAPDurationByRole);
+        result.put(durationByRole);
 
         return result;
     }
