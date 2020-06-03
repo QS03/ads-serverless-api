@@ -85,3 +85,17 @@ functions:
                 start: true
                 end: true
                 orgCode: true
+
+  ASAPInspectorMultiOrg:
+    handler: com.serverless.ASAPInspectorMultiOrgHandler
+    timeout: 30
+    events:
+      - http:
+          path: /sample-data-2/asap-inspector
+          method: post
+          cors: true
+          request:
+            parameters:
+              querystrings:
+                start: true
+                end: true
