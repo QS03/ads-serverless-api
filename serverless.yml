@@ -29,76 +29,12 @@ package:
   artifact: target/${self:service}-${self:provider.stage}.jar
 
 functions:
-  numberOfCustomers:
-    handler: com.serverless.CustomersHandler
-    timeout: 30
-    events:
-      - http:
-          path: /sales-data-sample/number-of-customers
-          method: get
-          cors: true
-
-  numberOfOrders:
-    handler: com.serverless.OrdersHandler
-    timeout: 30
-    events:
-      - http:
-          path: /sales-data-sample/number-of-orders
-          method: get
-          cors: true
-
-  salesByYear:
-    handler: com.serverless.SalesHandler
-    timeout: 30
-    events:
-      - http:
-          path: /sales-data-sample/sales-by-year
-          method: get
-          cors: true
-
-  heroMetric:
-    handler: com.serverless.HeroMetricHandler
-    timeout: 30
-    events:
-      - http:
-          path: /adjusted-data/hero-metric
-          method: get
-          cors: true
-          request:
-            parameters:
-              querystrings:
-                start: true
-                end: true
-
   heroStats:
     handler: com.serverless.HeroStatsHandler
     timeout: 30
     events:
       - http:
           path: /sample-data-2/hero-stats
-          method: get
-          cors: true
-          request:
-            parameters:
-              querystrings:
-                start: true
-                end: true
-
-  inspectorRoles:
-    handler: com.serverless.InspectorRolesHandler
-    timeout: 30
-    events:
-      - http:
-          path: /sample-data-2/inspector-roles
-          method: get
-          cors: true
-
-  inspectorSteps:
-    handler: com.serverless.InspectorStepsHandler
-    timeout: 30
-    events:
-      - http:
-          path: /sample-data-2/inspector-steps
           method: get
           cors: true
           request:
