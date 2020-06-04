@@ -77,7 +77,7 @@ functions:
     events:
       - http:
           path: /sample-data-2/asap-inspector
-          method: get
+          method: post
           cors: true
           request:
             parameters:
@@ -86,12 +86,12 @@ functions:
                 end: true
                 orgCode: true
 
-  ASAPInspectorMultiOrg:
-    handler: com.serverless.ASAPInspectorMultiOrgHandler
+  Sankey:
+    handler: com.serverless.SankeyHandler
     timeout: 30
     events:
       - http:
-          path: /sample-data-2/asap-inspector
+          path: /sample-data-2/sankey
           method: post
           cors: true
           request:

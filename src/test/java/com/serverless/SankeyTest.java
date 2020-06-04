@@ -7,13 +7,13 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
-public class ASAPInspectorTest {
+public class SankeyTest {
     @Test
     /*
      *  Valid start date and end date
      * */
     public void ValidCase() {
-        ASAPInspectorHandler handler = new ASAPInspectorHandler();
+        SankeyHandler handler = new SankeyHandler();
 
         Map<String, Object> input = new HashMap<String, Object>();
         Map<String, String> queryStringParameters = new HashMap<String, String>() ;
@@ -21,8 +21,8 @@ public class ASAPInspectorTest {
 
         input.put("body",
                 "{\n" +
-                "\t\"organizations\": [\"Org 1\"]\n" +
-                "}"
+                        "\t\"organizations\": [\"Org 1\"]\n" +
+                        "}"
         );
 
         ApiGatewayResponse response = handler.handleRequest(input, null);

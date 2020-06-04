@@ -155,7 +155,6 @@ public class HeroStatsHandler implements RequestHandler<Map<String, Object>, Api
                 "\t\"ASAP Status\" = 'Completed'\n" +
                 "\tAND \"ASAP Total Cycle Time\" > 0";
 
-        System.out.println(query);
         try {
             prepStmt = connection.prepareStatement(query);
             rs = prepStmt.executeQuery();

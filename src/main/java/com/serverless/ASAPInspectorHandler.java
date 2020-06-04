@@ -26,67 +26,98 @@ public class ASAPInspectorHandler implements RequestHandler<Map<String, Object>,
     public ApiGatewayResponse handleRequest(Map<String, Object> input, Context context) {
         LOG.info("input: {}", input);
 
-        String startDate = null;
-        String endDate = null;
-        String orgCode = null;
-        Map<String, String> queryStringParameters = (Map<String, String>)input.get("queryStringParameters");
-        if(queryStringParameters != null ){
-            startDate = queryStringParameters.get("start");
-            endDate = queryStringParameters.get("end");
-            orgCode = queryStringParameters.get("orgCode");
-        }
-
-        if(startDate == null)startDate = "1900-01-01";
-        if(endDate == null)endDate = "2100-01-01";
-        if(orgCode == null)orgCode = "";
-
         int statusCode = 400;
         JSONObject retObject = new JSONObject();
         JSONObject data = new JSONObject();
 
-        if(!orgCode.equals("")  && !orgCode.equals("organization 1") && !orgCode.equals("organization 2")){
-            try {
-                data.put("message", "Invalid Org Code");
-                retObject.put("data", data);
-            } catch (JSONException e) {
-                LOG.info("Error: {}", e);
+        String startDate = null;
+        String endDate = null;
+        Map<String, String> queryStringParameters = (Map<String, String>)input.get("queryStringParameters");
+        if(queryStringParameters != null ){
+            startDate = queryStringParameters.get("start");
+            endDate = queryStringParameters.get("end");
+        }
+
+        if (startDate == null) startDate = "1900-01-01";
+        if (endDate == null) endDate = "2100-01-01";
+
+        JSONArray organizations = null;
+        try {
+            if (input.get("body") != null){
+                JSONObject body = new JSONObject((String) input.get("body"));
+                organizations = (JSONArray) body.get("organizations");
             }
-        } else if( !Validator.isValidateDate(startDate) || !Validator.isValidateDate(endDate))
-        {
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        boolean isValidOrg = true;
+        if(organizations == null){
+            organizations = new JSONArray();
+        } else {
+            for(int i=0;  i<organizations.length(); i++){
+                try {
+                    String org = organizations.getString(i);
+                    if(!org.equals("Org 1") &&
+                            !org.equals("Org 2") &&
+                            !org.equals("Org 3") &&
+                            !org.equals("Org 4") &&
+                            !org.equals("Org 5") &&
+                            !org.equals("Org 6")){
+                        isValidOrg = false;
+                        break;
+                    }
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                    isValidOrg = false;
+                }
+            }
+        }
+        LOG.info("organizations: {}", organizations);
+        if(!isValidOrg){
             try {
-                data.put("message", "Invalid date format");
+                data.put("message", "Bad Request: Invalid Org Code");
                 retObject.put("data", data);
             } catch (JSONException e) {
                 LOG.info("Error: {}", e);
             }
         } else {
-            DBCredentials dbCreds = new DBCredentials();
-            dbCreds.setDbHost("covid-oracle.cewagdn2zv2j.us-west-2.rds.amazonaws.com");
-            dbCreds.setDbPort("1521");
-            dbCreds.setUserName("admin");
-            dbCreds.setPassword("8iEkGjQgFJzOblCihFaz");
-            dbCreds.setDbName("orcl");
-
-            DBConnection dbConnection = new DBConnection();
-            Connection connection = dbConnection.getConnection(dbCreds);
-
-            try {
-                if (Optional.ofNullable(connection).isPresent()) {
-                    statusCode = 200;
-                    JSONArray activityData = getactivityData(connection, startDate, endDate, orgCode);
-                    JSONArray activityDataRows = cleanactivityData(activityData);
-                    JSONArray activityLegend = getActivityLegend(connection);
-                    data.put("activityLegend", activityLegend);
-                    data.put("activityDataRows", activityDataRows);
+            if (!Validator.isValidateDate(startDate) || !Validator.isValidateDate(endDate)) {
+                try {
+                    data.put("message", "Invalid date format");
                     retObject.put("data", data);
-                } else {
-                    statusCode = 501;
-                    data.put("message", "Server error!");
-                    retObject.put("data", data);
+                } catch (JSONException e) {
+                    LOG.info("Error: {}", e);
                 }
+            } else {
+                DBCredentials dbCreds = new DBCredentials();
+                dbCreds.setDbHost("covid-oracle.cewagdn2zv2j.us-west-2.rds.amazonaws.com");
+                dbCreds.setDbPort("1521");
+                dbCreds.setUserName("admin");
+                dbCreds.setPassword("8iEkGjQgFJzOblCihFaz");
+                dbCreds.setDbName("orcl");
 
-            } catch (JSONException e) {
-                LOG.info("Error: {}", e);
+                DBConnection dbConnection = new DBConnection();
+                Connection connection = dbConnection.getConnection(dbCreds);
+
+                try {
+                    if (Optional.ofNullable(connection).isPresent()) {
+                        statusCode = 200;
+                        JSONArray activityData = getactivityData(connection, startDate, endDate, organizations);
+                        JSONArray activityDataRows = cleanactivityData(activityData);
+                        JSONArray activityLegend = getActivityLegend(connection);
+                        data.put("activityLegend", activityLegend);
+                        data.put("activityDataRows", activityDataRows);
+                        retObject.put("data", data);
+                    } else {
+                        statusCode = 501;
+                        data.put("message", "Server error!");
+                        retObject.put("data", data);
+                    }
+
+                } catch (JSONException e) {
+                    LOG.info("Error: {}", e);
+                }
             }
         }
 
@@ -98,9 +129,9 @@ public class ASAPInspectorHandler implements RequestHandler<Map<String, Object>,
                 .build();
     }
 
-    public JSONArray getactivityData(Connection connection, String startDate, String endDate, String orgCode) {
+    public JSONArray getactivityData(Connection connection, String startDate, String endDate, JSONArray organizations) throws JSONException {
 
-        String query = "WITH roles AS (\n" +
+        StringBuilder query = new StringBuilder("WITH roles AS (\n" +
                 "    SELECT\n" +
                 "        CASE_NUMBER,\n" +
                 "        \"Role\",\n" +
@@ -280,17 +311,13 @@ public class ASAPInspectorHandler implements RequestHandler<Map<String, Object>,
                 "WHERE\n" +
                 String.format("\t\"ASAP CREATED\" >= TO_DATE('%s', 'yyyy-MM-dd')\n", startDate) +
                 String.format("\tAND \"ASAP CREATED\" < TO_DATE('%s', 'yyyy-MM-dd')\n", endDate) +
-                "    and \"totalTime\" < 1000\n";
+                "    and \"totalTime\" < 1000\n");
 
-        if(orgCode.equals("organization 1")) query += "\tand \"Org Code\" = 'Org 1'\n";
-        if(orgCode.equals("organization 2")) query += "\tand \"Org Code\" = 'Org 2'\n";
+        for (int i=0; i<organizations.length(); i++){
+            query.append("\tand \"Org Code\" = '").append(organizations.getString(i)).append("'\n");
+        }
 
-        query +="GROUP BY\n" +
-                "    a. \"CASE_NUMBER\",\n" +
-                "    \"Step Display Name\",\n" +
-                "    \"isActive\",\n" +
-                "    \"totalTime\")\n" +
-                "    select \"isActive\", \"totalTime\", \"totalMin\", \"totalMax\", \"asap\",  \"name\", \"color\", \"durationDays\", \"type\", \"standardMin\", \"standardMax\" from combined order by \"NUM\" asc, \"name\" asc";
+        query.append("GROUP BY\n" + "    a. \"CASE_NUMBER\",\n" + "    \"Step Display Name\",\n" + "    \"isActive\",\n" + "    \"totalTime\")\n" + "    select \"isActive\", \"totalTime\", \"totalMin\", \"totalMax\", \"asap\",  \"name\", \"color\", \"durationDays\", \"type\", \"standardMin\", \"standardMax\" from combined order by \"NUM\" asc, \"name\" asc");
 
         PreparedStatement prepStmt = null;
         ResultSet rs = null;
@@ -298,7 +325,7 @@ public class ASAPInspectorHandler implements RequestHandler<Map<String, Object>,
         JSONArray resultArray = new JSONArray();
 
         try {
-            prepStmt = connection.prepareStatement(query);
+            prepStmt = connection.prepareStatement(query.toString());
             rs = prepStmt.executeQuery();
             while (rs.next()){
                 JSONObject item = new JSONObject();

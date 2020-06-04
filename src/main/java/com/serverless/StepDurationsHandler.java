@@ -131,8 +131,6 @@ public class StepDurationsHandler implements RequestHandler<Map<String, Object>,
                     "ORDER BY\n" +
                     "\t\"Step Display Name\" ASC";
 
-            LOG.info("Query: {}", query);
-
             try {
                 if (Optional.ofNullable(connection).isPresent()) {
                     statusCode = 200;

@@ -109,8 +109,6 @@ public class RoleDurationsHandler implements RequestHandler<Map<String, Object>,
                     "GROUP BY\n" +
                     "\t\"Role\"";
 
-            LOG.info("Query: {}", query);
-
             try {
                 if (Optional.ofNullable(connection).isPresent()) {
                     statusCode = 200;
