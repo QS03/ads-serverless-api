@@ -20,6 +20,11 @@ public class StepDurationsTest {
         queryStringParameters.put("start", "2020-01-01");
         queryStringParameters.put("end", "2020-05-20");
         input.put("queryStringParameters", queryStringParameters);
+        input.put("body",
+                "{\n" +
+                        "\t\"organizations\": [\"Org 2\"]\n" +
+                        "}"
+        );
 
         ApiGatewayResponse response = handler.handleRequest(input, null);
         System.out.println(response.getBody());

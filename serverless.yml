@@ -35,7 +35,7 @@ functions:
     events:
       - http:
           path: /sample-data-2/hero-stats
-          method: get
+          method: post
           cors: true
           request:
             parameters:
@@ -49,7 +49,7 @@ functions:
     events:
       - http:
           path: /sample-data-2/role-durations
-          method: get
+          method: post
           cors: true
           request:
             parameters:
@@ -63,7 +63,7 @@ functions:
     events:
       - http:
           path: /sample-data-2/step-durations
-          method: get
+          method: post
           cors: true
           request:
             parameters:

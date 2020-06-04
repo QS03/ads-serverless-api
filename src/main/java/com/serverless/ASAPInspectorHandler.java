@@ -131,7 +131,7 @@ public class ASAPInspectorHandler implements RequestHandler<Map<String, Object>,
 
     public JSONArray getactivityData(Connection connection, String startDate, String endDate, JSONArray organizations) throws JSONException {
 
-        StringBuilder query = new StringBuilder("WITH roles AS (\n" +
+        String query = "WITH roles AS (\n" +
                 "    SELECT\n" +
                 "        CASE_NUMBER,\n" +
                 "        \"Role\",\n" +
@@ -229,9 +229,14 @@ public class ASAPInspectorHandler implements RequestHandler<Map<String, Object>,
                 "WHERE\n" +
                 String.format("\t\"ASAP CREATED\" >= TO_DATE('%s', 'yyyy-MM-dd')\n", startDate) +
                 String.format("\tAND \"ASAP CREATED\" < TO_DATE('%s', 'yyyy-MM-dd')\n", endDate) +
-                "    and \"totalTime\" < 1000\n" +
-                "    and \"Org Code\" = 'Org 1'\n" +
-                "GROUP BY\n" +
+                "    and \"totalTime\" < 1000\n";
+
+        for (int i=0; i<organizations.length(); i++){
+            query += "\tand \"Org Code\" = '" + organizations.getString(i) + "'\n";
+        }
+
+
+                query += "GROUP BY\n" +
                 "    a. \"CASE_NUMBER\",\n" +
                 "    \"Role\",\n" +
                 "    \"isActive\",\n" +
@@ -311,13 +316,13 @@ public class ASAPInspectorHandler implements RequestHandler<Map<String, Object>,
                 "WHERE\n" +
                 String.format("\t\"ASAP CREATED\" >= TO_DATE('%s', 'yyyy-MM-dd')\n", startDate) +
                 String.format("\tAND \"ASAP CREATED\" < TO_DATE('%s', 'yyyy-MM-dd')\n", endDate) +
-                "    and \"totalTime\" < 1000\n");
+                "    and \"totalTime\" < 1000\n";
 
         for (int i=0; i<organizations.length(); i++){
-            query.append("\tand \"Org Code\" = '").append(organizations.getString(i)).append("'\n");
+            query += "\tand \"Org Code\" = '" + organizations.getString(i) + "'\n";
         }
 
-        query.append("GROUP BY\n" + "    a. \"CASE_NUMBER\",\n" + "    \"Step Display Name\",\n" + "    \"isActive\",\n" + "    \"totalTime\")\n" + "    select \"isActive\", \"totalTime\", \"totalMin\", \"totalMax\", \"asap\",  \"name\", \"color\", \"durationDays\", \"type\", \"standardMin\", \"standardMax\" from combined order by \"NUM\" asc, \"name\" asc");
+        query += "GROUP BY\n" + "    a. \"CASE_NUMBER\",\n" + "    \"Step Display Name\",\n" + "    \"isActive\",\n" + "    \"totalTime\")\n" + "    select \"isActive\", \"totalTime\", \"totalMin\", \"totalMax\", \"asap\",  \"name\", \"color\", \"durationDays\", \"type\", \"standardMin\", \"standardMax\" from combined order by \"NUM\" asc, \"name\" asc";
 
         PreparedStatement prepStmt = null;
         ResultSet rs = null;
