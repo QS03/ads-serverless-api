@@ -12,10 +12,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 
 public class SankeyHandler implements RequestHandler<Map<String, Object>, ApiGatewayResponse> {
@@ -117,11 +114,15 @@ public class SankeyHandler implements RequestHandler<Map<String, Object>, ApiGat
             }
         }
 
+        Map<String, String> headers = new HashMap<>();
+        headers.put("Content-Type", "application/json");
+        headers.put("Access-Control-Allow-Origin", "*");
+        headers.put("Access-Control-Allow-Headers", "Content-Type, Origin, Access-Control-Allow-Headers");
+
         return ApiGatewayResponse.builder()
                 .setStatusCode(statusCode)
                 .setRawBody(retObject.toString())
-                .setHeaders(Collections.singletonMap("Content-Type", "application/json"))
-                .setHeaders(Collections.singletonMap("Access-Control-Allow-Origin", "*"))
+                .setHeaders(headers)
                 .build();
     }
 

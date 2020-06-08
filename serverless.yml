@@ -78,7 +78,8 @@ functions:
       - http:
           path: /sample-data-2/asap-inspector
           method: post
-          cors: true
+          cors:
+            origin: '*'
           request:
             parameters:
               querystrings:
