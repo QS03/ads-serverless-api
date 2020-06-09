@@ -7,13 +7,13 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
-public class SankeyTest {
+public class SankeyDiagramTest {
     @Test
     /*
      *  Valid start date and end date
      * */
     public void ValidCase() {
-        SankeyHandler handler = new SankeyHandler();
+        SankeyDiagramHandler handler = new SankeyDiagramHandler();
 
         Map<String, Object> input = new HashMap<String, Object>();
         Map<String, String> queryStringParameters = new HashMap<String, String>() ;

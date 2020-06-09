@@ -87,12 +87,12 @@ functions:
                 end: true
                 orgCode: true
 
-  Sankey:
-    handler: com.serverless.SankeyHandler
+  SankeyDiagram:
+    handler: com.serverless.SankeyDiagramHandler
     timeout: 30
     events:
       - http:
-          path: /sample-data-2/sankey
+          path: /sample-data-2/sankey-diagram
           method: post
           cors: true
           request:
