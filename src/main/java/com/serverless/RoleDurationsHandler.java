@@ -32,10 +32,12 @@ public class RoleDurationsHandler implements RequestHandler<Map<String, Object>,
 
         String startDate = null;
         String endDate = null;
+        String caseNumber = "";
         Map<String, String> queryStringParameters = (Map<String, String>)input.get("queryStringParameters");
         if(queryStringParameters != null ){
             startDate = queryStringParameters.get("start");
             endDate = queryStringParameters.get("end");
+            caseNumber = queryStringParameters.get("casenumber");
         }
 
         if (startDate == null) startDate = "1900-01-01";
@@ -93,61 +95,17 @@ public class RoleDurationsHandler implements RequestHandler<Map<String, Object>,
                 DBConnection dbConnection = new DBConnection();
                 Connection connection = dbConnection.getConnection(dbCreds);
 
-
-                String query = "SELECT\n" +
-                        "\t\"Role\" AS \"name\",\n" +
-                        "\tAVG(\"Cycle Time - Days\") AS \"averageDuration\",\n" +
-                        "\tMIN(\"Cycle Time - Days\") AS \"min\",\n" +
-                        "\tMAX(\"Cycle Time - Days\") AS \"max\",\n" +
-                        "\tCASE WHEN \"Role\" = 'Role 1' THEN 3\n" +
-                        "\tWHEN \"Role\" = 'Role 2' THEN 2\n" +
-                        "\tWHEN \"Role\" = 'Role 3' THEN 2\n" +
-                        "\tWHEN \"Role\" = 'Role 4' THEN 1\n" +
-                        "\tEND AS \"standardMin\",\n" +
-                        "\tCASE WHEN \"Role\" = 'Role 1' THEN 9\n" +
-                        "\tWHEN \"Role\" = 'Role 2' THEN 4\n" +
-                        "\tWHEN \"Role\" = 'Role 3' THEN 6\n" +
-                        "\tWHEN \"Role\" = 'Role 4' THEN 3\n" +
-                        "\tEND AS \"standardMax\"\n" +
-                        "FROM (\n" +
-                        "\tSELECT\n" +
-                        "\t\tCASE_NUMBER,\n" +
-                        "\t\t\"ASAP CREATED\",\n" +
-                        "\t\t\"Role\",\n" +
-                        "\t\t\"Date In\",\n" +
-                        "\t\t\"Date Out\",\n" +
-                        "\t\tCASE WHEN \"Date Out\" IS NULL AND \"Date In\" IS NOT NULL THEN \n" +
-                        "\t\ttrunc(cast(CURRENT_TIMESTAMP AS date) - \"Date In\", 2)\n" +
-                        "\t\tELSE CAST(\"Cycle Time - Days\" AS NUMBER)\n" +
-                        "\t\tEND AS \"Cycle Time - Days\",\n" +
-                        "\t\tCASE WHEN \"Date Out\" IS NULL AND \"Date In\" IS NOT NULL THEN trunc((cast(CURRENT_TIMESTAMP AS date) - \"Date In\") * 24, 2)\n" +
-                        "\t\tELSE CAST(\"Cycle Time - Hours\" AS NUMBER)\n" +
-                        "\t\tEND AS \"Cycle Time - Hours\",\n" +
-                        "\t\t\"ASAP Status\"\n" +
-                        "\tFROM \"ADMIN\".\"sample_data_2\"\n" +
-                        String.format("\tWHERE \"ASAP CREATED\" >= TO_DATE('%s', 'yyyy-MM-dd')\n", startDate) +
-                        String.format("\tAND \"ASAP CREATED\" < TO_DATE('%s', 'yyyy-MM-dd')\n", endDate);
-
-                        for (int i=0; i<organizations.length(); i++){
-                            try {
-                                query += "\tand \"Org Code\" = '" + organizations.getString(i) + "'\n";
-                            } catch (JSONException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                        query += ")\n" +
-                        "WHERE \"Role\" is not NULL\n" +
-                        "GROUP BY\n" +
-                        "\t\"Role\"";
-
                 try {
                     if (Optional.ofNullable(connection).isPresent()) {
                         statusCode = 200;
-                        retObject = runQuery(connection, query);
+                        JSONArray detailRoles = getDetailRoles(connection, caseNumber);
+                        data.put("detailRoles", detailRoles);
+                        JSONArray roleDurations = getRoleDurations(connection, startDate, endDate, organizations);
+                        data.put("roleDurations", roleDurations);
+
                     } else {
                         statusCode = 501;
                         data.put("message", "Server error!");
-                        retObject.put("data", data);
                     }
 
                 } catch (JSONException e) {
@@ -157,11 +115,16 @@ public class RoleDurationsHandler implements RequestHandler<Map<String, Object>,
                 statusCode = 400;
                 try {
                     data.put("message", "Invalid date format");
-                    retObject.put("data", data);
                 } catch (JSONException e) {
                     LOG.info("Error: {}", e);
                 }
             }
+        }
+
+        try {
+            retObject.put("data", data);
+        } catch (JSONException e) {
+            e.printStackTrace();
         }
 
         Map<String, String> headers = new HashMap<>();
@@ -176,21 +139,59 @@ public class RoleDurationsHandler implements RequestHandler<Map<String, Object>,
                 .build();
     }
 
-    /**
-     * This method will run sample query against Oracle Database.
-     *
-     * @param connection
-     * @param query
-     */
-    public JSONObject runQuery(Connection connection, String query) {
-        PreparedStatement prepStmt = null;
-        ResultSet rs = null;
-        JSONObject result = new JSONObject();
+    public JSONArray getRoleDurations(Connection connection, String startDate, String endDate, JSONArray organizations) {
 
+        String query = "SELECT\n" +
+                "\t\"Role\" AS \"name\",\n" +
+                "\tAVG(\"Cycle Time - Days\") AS \"averageDuration\",\n" +
+                "\tMIN(\"Cycle Time - Days\") AS \"min\",\n" +
+                "\tMAX(\"Cycle Time - Days\") AS \"max\",\n" +
+                "\tCASE WHEN \"Role\" = 'Role 1' THEN 3\n" +
+                "\tWHEN \"Role\" = 'Role 2' THEN 2\n" +
+                "\tWHEN \"Role\" = 'Role 3' THEN 2\n" +
+                "\tWHEN \"Role\" = 'Role 4' THEN 1\n" +
+                "\tEND AS \"standardMin\",\n" +
+                "\tCASE WHEN \"Role\" = 'Role 1' THEN 9\n" +
+                "\tWHEN \"Role\" = 'Role 2' THEN 4\n" +
+                "\tWHEN \"Role\" = 'Role 3' THEN 6\n" +
+                "\tWHEN \"Role\" = 'Role 4' THEN 3\n" +
+                "\tEND AS \"standardMax\"\n" +
+                "FROM (\n" +
+                "\tSELECT\n" +
+                "\t\tCASE_NUMBER,\n" +
+                "\t\t\"ASAP CREATED\",\n" +
+                "\t\t\"Role\",\n" +
+                "\t\t\"Date In\",\n" +
+                "\t\t\"Date Out\",\n" +
+                "\t\tCASE WHEN \"Date Out\" IS NULL AND \"Date In\" IS NOT NULL THEN \n" +
+                "\t\ttrunc(cast(CURRENT_TIMESTAMP AS date) - \"Date In\", 2)\n" +
+                "\t\tELSE CAST(\"Cycle Time - Days\" AS NUMBER)\n" +
+                "\t\tEND AS \"Cycle Time - Days\",\n" +
+                "\t\tCASE WHEN \"Date Out\" IS NULL AND \"Date In\" IS NOT NULL THEN trunc((cast(CURRENT_TIMESTAMP AS date) - \"Date In\") * 24, 2)\n" +
+                "\t\tELSE CAST(\"Cycle Time - Hours\" AS NUMBER)\n" +
+                "\t\tEND AS \"Cycle Time - Hours\",\n" +
+                "\t\t\"ASAP Status\"\n" +
+                "\tFROM \"ADMIN\".\"sample_data_2\"\n" +
+                String.format("\tWHERE \"ASAP CREATED\" >= TO_DATE('%s', 'yyyy-MM-dd')\n", startDate) +
+                String.format("\tAND \"ASAP CREATED\" < TO_DATE('%s', 'yyyy-MM-dd')\n", endDate);
+
+        for (int i=0; i<organizations.length(); i++){
+            try {
+                query += "\tand \"Org Code\" = '" + organizations.getString(i) + "'\n";
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+        query += ")\n" +
+                "WHERE \"Role\" is not NULL\n" +
+                "GROUP BY\n" +
+                "\t\"Role\"";
+
+
+        JSONArray roleDurations = new JSONArray();
         try {
-            prepStmt = connection.prepareStatement(query);
-            rs = prepStmt.executeQuery();
-            JSONArray result_array = new JSONArray();
+            PreparedStatement prepStmt = connection.prepareStatement(query);
+            ResultSet rs = prepStmt.executeQuery();
             while (rs.next()){
                 JSONObject item = new JSONObject();
                 item.put("name", rs.getString("name"));
@@ -200,15 +201,41 @@ public class RoleDurationsHandler implements RequestHandler<Map<String, Object>,
                 item.put("max", rs.getFloat("max"));
                 item.put("standardMin", rs.getFloat("standardMin"));
                 item.put("standardMax", rs.getFloat("standardMax"));
-
-                result_array.put(item);
+                roleDurations.put(item);
             }
-            LOG.info("Counts: {}", result_array.length());
-            result.put("data", result_array);
+            LOG.info("Counts: {}", roleDurations.length());
+        } catch (SQLException | JSONException e) {
+            e.printStackTrace();
+        };
+        return roleDurations;
+    }
+
+    JSONArray getDetailRoles(Connection connection, String caseNumber) {
+
+        String query = "--detail role\n" +
+                "SELECT case_number as \"asap\", \"Role\" as \"role\", sum(\"Cycle Time - Days\") as \"avgRoleTime\"\n" +
+                "FROM \"ADMIN\".\"sample_data_2\"\n" +
+                "WHERE \"Cycle Time - Days\" IS NOT NULL\n";
+        if(!caseNumber.equals(""))query += "AND case_number = '"+ caseNumber + "'\n";
+        query += "GROUP BY CASE_NUMBER, \"Role\"";
+
+        // LOG.info("getDetailRoles query: {}", query);
+        JSONArray detailRoles = new JSONArray();
+        try {
+            PreparedStatement prepStmt = connection.prepareStatement(query);
+            ResultSet rs = prepStmt.executeQuery();
+            while (rs.next()){
+                JSONObject item = new JSONObject();
+                item.put("asap", rs.getString("asap"));
+                item.put("role", rs.getString("role"));
+                item.put("avgRoleTime", rs.getFloat("avgRoleTime"));
+                detailRoles.put(item);
+            }
+            LOG.info("Counts: {}", detailRoles.length());
         } catch (SQLException | JSONException e) {
             e.printStackTrace();
         };
 
-        return result;
+        return detailRoles;
     }
 }

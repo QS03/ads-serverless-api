@@ -56,6 +56,7 @@ functions:
               querystrings:
                 start: true
                 end: true
+                casenumber: true
 
   stepDurations:
     handler: com.serverless.StepDurationsHandler
@@ -70,6 +71,7 @@ functions:
               querystrings:
                 start: true
                 end: true
+                casenumber: true
 
   ASAPInspector:
     handler: com.serverless.ASAPInspectorHandler
@@ -100,3 +102,42 @@ functions:
               querystrings:
                 start: true
                 end: true
+
+  DetailHero:
+    handler: com.serverless.DetailHeroHandler
+    timeout: 30
+    events:
+      - http:
+          path: /sample-data-2/detail-hero
+          method: get
+          cors: true
+          request:
+            parameters:
+              querystrings:
+                casenumber: true
+
+  AsapDetail:
+    handler: com.serverless.AsapDetailHandler
+    timeout: 30
+    events:
+      - http:
+          path: /sample-data-2/asap-detail
+          method: get
+          cors: true
+          request:
+            parameters:
+              querystrings:
+                casenumber: true
+
+  UserTime:
+    handler: com.serverless.UserTimeHandler
+    timeout: 30
+    events:
+      - http:
+          path: /sample-data-2/user-time
+          method: get
+          cors: true
+          request:
+            parameters:
+              querystrings:
+                casenumber: true
