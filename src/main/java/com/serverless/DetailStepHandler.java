@@ -148,8 +148,6 @@ public class DetailStepHandler implements RequestHandler<Map<String, Object>, Ap
                 "GROUP BY\n" +
                 "\t\"Step Display Name\"";
 
-        LOG.info("getDetailSteps query: {}", query);
-
         JSONArray stepDurations = new JSONArray();
         try {
             PreparedStatement prepStmt = connection.prepareStatement(query);

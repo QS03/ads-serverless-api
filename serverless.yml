@@ -118,20 +118,20 @@ functions:
                 end: true
                 casenumber: true
 
-    DetailStep:
-      handler: com.serverless.DetailStepHandler
-      timeout: 30
-      events:
-        - http:
-            path: /sample-data-2/detail-step
-            method: get
-            cors: true
-            request:
-              parameters:
-                querystrings:
-                  start: true
-                  end: true
-                  casenumber: true
+  DetailStep:
+    handler: com.serverless.DetailStepHandler
+    timeout: 30
+    events:
+      - http:
+          path: /sample-data-2/detail-step
+          method: get
+          cors: true
+          request:
+            parameters:
+              querystrings:
+                start: true
+                end: true
+                casenumber: true
 
   DetailHero:
     handler: com.serverless.DetailHeroHandler
