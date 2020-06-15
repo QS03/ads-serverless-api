@@ -37,74 +37,31 @@ public class DetailRoleHandler implements RequestHandler<Map<String, Object>, Ap
         if(queryStringParameters != null ){
             startDate = queryStringParameters.get("start");
             endDate = queryStringParameters.get("end");
-            caseNumber = queryStringParameters.get("casenumber");
+            caseNumber = queryStringParameters.get("asap");
         }
 
         if (startDate == null) startDate = "1900-01-01";
         if (endDate == null) endDate = "2100-01-01";
 
-        JSONArray organizations = null;
-        try {
-            if (input.get("body") != null){
-                JSONObject body = new JSONObject((String) input.get("body"));
-                organizations = (JSONArray) body.get("organizations");
-            }
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
 
-        DBCredentials dbCreds = new DBCredentials();
-        dbCreds.setDbHost("covid-oracle.cewagdn2zv2j.us-west-2.rds.amazonaws.com");
-        dbCreds.setDbPort("1521");
-        dbCreds.setUserName("admin");
-        dbCreds.setPassword("8iEkGjQgFJzOblCihFaz");
-        dbCreds.setDbName("orcl");
-
-        DBConnection dbConnection = new DBConnection();
-        Connection connection = dbConnection.getConnection(dbCreds);
-
-        boolean isValidOrg = true;
-        if(organizations == null){
-            try {
-                organizations = getOrganizations(connection);
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-        } else {
-            for(int i=0;  i<organizations.length(); i++){
-                try {
-                    String org = organizations.getString(i);
-                    if(!org.equals("Org 1") &&
-                            !org.equals("Org 2") &&
-                            !org.equals("Org 3") &&
-                            !org.equals("Org 4") &&
-                            !org.equals("Org 5") &&
-                            !org.equals("Org 6")){
-                        isValidOrg = false;
-                        break;
-                    }
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                    isValidOrg = false;
-                }
-            }
-        }
-        LOG.info("organizations: {}", organizations);
-        if(!isValidOrg){
-            try {
-                data.put("message", "Bad Request: Invalid Org Code");
-                retObject.put("data", data);
-            } catch (JSONException e) {
-                LOG.info("Error: {}", e);
-            }
-        } else {
             if (Validator.isValidateDate(startDate) && Validator.isValidateDate(endDate)) {
+                DBCredentials dbCreds = new DBCredentials();
+                dbCreds.setDbHost("covid-oracle.cewagdn2zv2j.us-west-2.rds.amazonaws.com");
+                dbCreds.setDbPort("1521");
+                dbCreds.setUserName("admin");
+                dbCreds.setPassword("8iEkGjQgFJzOblCihFaz");
+                dbCreds.setDbName("orcl");
+
+                DBConnection dbConnection = new DBConnection();
+                Connection connection = dbConnection.getConnection(dbCreds);
+
                 try {
                     if (Optional.ofNullable(connection).isPresent()) {
                         statusCode = 200;
+
                         JSONArray detailRoles = getDetailRoles(connection, caseNumber);
                         data.put("detailRoles", detailRoles);
-                        JSONArray roleDurations = getRoleDurations(connection, startDate, endDate, organizations);
+                        JSONArray roleDurations = getRoleDurations(connection, startDate, endDate);
                         data.put("roleDurations", roleDurations);
 
                     } else {
@@ -123,7 +80,7 @@ public class DetailRoleHandler implements RequestHandler<Map<String, Object>, Ap
                     LOG.info("Error: {}", e);
                 }
             }
-        }
+
 
         try {
             retObject.put("data", data);
@@ -143,7 +100,7 @@ public class DetailRoleHandler implements RequestHandler<Map<String, Object>, Ap
                 .build();
     }
 
-    public JSONArray getRoleDurations(Connection connection, String startDate, String endDate, JSONArray organizations) throws JSONException {
+    public JSONArray getRoleDurations(Connection connection, String startDate, String endDate) {
 
         String query = "SELECT\n" +
                 "\t\"Role\" AS \"name\",\n" +
@@ -179,19 +136,7 @@ public class DetailRoleHandler implements RequestHandler<Map<String, Object>, Ap
                 String.format("\tWHERE \"ASAP CREATED\" >= TO_DATE('%s', 'yyyy-MM-dd')\n", startDate) +
                 String.format("\tAND \"ASAP CREATED\" < TO_DATE('%s', 'yyyy-MM-dd')\n", endDate);
 
-                query += "    AND (\n";
-
-                for (int i=0; i<organizations.length(); i++){
-                    if(i == 0){
-                        query += "\t \"Org Code\" = '" + organizations.getString(i) + "'\n";
-                    }
-                    else {
-                        query += "\tOR \"Org Code\" = '" + organizations.getString(i) + "'\n";
-                    }
-                }
-
-                query += ")\n";
-                query += ")\n" +
+        query += ")\n" +
                 "WHERE \"Role\" is not NULL\n" +
                 "GROUP BY\n" +
                 "\t\"Role\"";
@@ -220,7 +165,6 @@ public class DetailRoleHandler implements RequestHandler<Map<String, Object>, Ap
     }
 
     JSONArray getDetailRoles(Connection connection, String caseNumber) {
-
         String query = "--detail role\n" +
                 "SELECT case_number as \"asap\", \"Role\" as \"role\", sum(\"Cycle Time - Days\") as \"avgRoleTime\"\n" +
                 "FROM \"ADMIN\".\"sample_data_2\"\n" +
@@ -246,29 +190,5 @@ public class DetailRoleHandler implements RequestHandler<Map<String, Object>, Ap
         };
 
         return detailRoles;
-    }
-
-    public JSONArray getOrganizations(Connection connection) throws JSONException {
-
-        String query = "SELECT DISTINCT (\"Org Code\")\n" +
-                "FROM \"ADMIN\".\"sample_data_2\"\n" +
-                "WHERE \"Org Code\" IS NOT NULL";
-
-
-        PreparedStatement prepStmt = null;
-        ResultSet rs = null;
-        JSONArray orgs = new JSONArray();
-
-        try {
-            prepStmt = connection.prepareStatement(query);
-            rs = prepStmt.executeQuery();
-            while(rs.next()) {
-                JSONObject item = new JSONObject();
-                orgs.put(rs.getString("Org Code"));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return orgs;
     }
 }
