@@ -48,9 +48,23 @@ public class ASAPInspectorHandler implements RequestHandler<Map<String, Object>,
             e.printStackTrace();
         }
 
+        DBCredentials dbCreds = new DBCredentials();
+        dbCreds.setDbHost("covid-oracle.cewagdn2zv2j.us-west-2.rds.amazonaws.com");
+        dbCreds.setDbPort("1521");
+        dbCreds.setUserName("admin");
+        dbCreds.setPassword("8iEkGjQgFJzOblCihFaz");
+        dbCreds.setDbName("orcl");
+
+        DBConnection dbConnection = new DBConnection();
+        Connection connection = dbConnection.getConnection(dbCreds);
+
         boolean isValidOrg = true;
         if(organizations == null){
-            organizations = new JSONArray();
+            try {
+                organizations = getOrganizations(connection);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
         } else {
             for(int i=0;  i<organizations.length(); i++){
                 try {
@@ -87,15 +101,6 @@ public class ASAPInspectorHandler implements RequestHandler<Map<String, Object>,
                     LOG.info("Error: {}", e);
                 }
             } else {
-                DBCredentials dbCreds = new DBCredentials();
-                dbCreds.setDbHost("covid-oracle.cewagdn2zv2j.us-west-2.rds.amazonaws.com");
-                dbCreds.setDbPort("1521");
-                dbCreds.setUserName("admin");
-                dbCreds.setPassword("8iEkGjQgFJzOblCihFaz");
-                dbCreds.setDbName("orcl");
-
-                DBConnection dbConnection = new DBConnection();
-                Connection connection = dbConnection.getConnection(dbCreds);
 
                 try {
                     if (Optional.ofNullable(connection).isPresent()) {
@@ -230,13 +235,19 @@ public class ASAPInspectorHandler implements RequestHandler<Map<String, Object>,
                 "WHERE\n" +
                 String.format("\t\"ASAP CREATED\" >= TO_DATE('%s', 'yyyy-MM-dd')\n", startDate) +
                 String.format("\tAND \"ASAP CREATED\" < TO_DATE('%s', 'yyyy-MM-dd')\n", endDate) +
-                "    and \"totalTime\" < 1000\n";
+                "    AND \"totalTime\" < 1000\n";
+                query += "    AND (\n";
 
-        for (int i=0; i<organizations.length(); i++){
-            query += "\tand \"Org Code\" = '" + organizations.getString(i) + "'\n";
-        }
+                for (int i=0; i<organizations.length(); i++){
+                    if(i == 0){
+                        query += "\t \"Org Code\" = '" + organizations.getString(i) + "'\n";
+                    }
+                    else {
+                        query += "\tOR \"Org Code\" = '" + organizations.getString(i) + "'\n";
+                    }
+                }
 
-
+                query += ")\n";
                 query += "GROUP BY\n" +
                 "    a. \"CASE_NUMBER\",\n" +
                 "    \"Role\",\n" +
@@ -319,12 +330,23 @@ public class ASAPInspectorHandler implements RequestHandler<Map<String, Object>,
                 String.format("\tAND \"ASAP CREATED\" < TO_DATE('%s', 'yyyy-MM-dd')\n", endDate) +
                 "    and \"totalTime\" < 1000\n";
 
-        for (int i=0; i<organizations.length(); i++){
-            query += "\tand \"Org Code\" = '" + organizations.getString(i) + "'\n";
-        }
 
-        query += "GROUP BY\n" + "    a. \"CASE_NUMBER\",\n" + "    \"Step Display Name\",\n" + "    \"isActive\",\n" + "    \"totalTime\")\n" + "    select \"isActive\", \"totalTime\", \"totalMin\", \"totalMax\", \"asap\",  \"name\", \"color\", \"durationDays\", \"type\", \"standardMin\", \"standardMax\" from combined order by \"NUM\" asc, \"name\" asc";
+                query += "    AND (\n";
 
+                for (int i=0; i<organizations.length(); i++){
+                    if(i == 0){
+                        query += "\t \"Org Code\" = '" + organizations.getString(i) + "'\n";
+                    }
+                    else {
+                        query += "\tOR \"Org Code\" = '" + organizations.getString(i) + "'\n";
+                    }
+                }
+
+                query += ")\n";
+
+                query += "GROUP BY\n" + "    a. \"CASE_NUMBER\",\n" + "    \"Step Display Name\",\n" + "    \"isActive\",\n" + "    \"totalTime\")\n" + "    select \"isActive\", \"totalTime\", \"totalMin\", \"totalMax\", \"asap\",  \"name\", \"color\", \"durationDays\", \"type\", \"standardMin\", \"standardMax\" from combined order by \"NUM\" asc, \"name\" asc";
+
+                LOG.info("Query: {}", query);
         PreparedStatement prepStmt = null;
         ResultSet rs = null;
         JSONObject result = new JSONObject();
@@ -526,5 +548,29 @@ public class ASAPInspectorHandler implements RequestHandler<Map<String, Object>,
             e.printStackTrace();
         };
         return result;
+    }
+
+    public JSONArray getOrganizations(Connection connection) throws JSONException {
+
+        String query = "SELECT DISTINCT (\"Org Code\")\n" +
+                "FROM \"ADMIN\".\"sample_data_2\"\n" +
+                "WHERE \"Org Code\" IS NOT NULL";
+
+
+        PreparedStatement prepStmt = null;
+        ResultSet rs = null;
+        JSONArray orgs = new JSONArray();
+
+        try {
+            prepStmt = connection.prepareStatement(query);
+            rs = prepStmt.executeQuery();
+            while(rs.next()) {
+                JSONObject item = new JSONObject();
+                orgs.put(rs.getString("Org Code"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return orgs;
     }
 }

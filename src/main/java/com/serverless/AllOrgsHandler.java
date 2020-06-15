@@ -17,7 +17,7 @@ import java.util.Map;
 import java.util.Optional;
 
 
-public class AsapDetailHandler implements RequestHandler<Map<String, Object>, ApiGatewayResponse> {
+public class AllOrgsHandler implements RequestHandler<Map<String, Object>, ApiGatewayResponse> {
 
     private final Logger LOG = LogManager.getLogger(this.getClass());
 
@@ -29,11 +29,6 @@ public class AsapDetailHandler implements RequestHandler<Map<String, Object>, Ap
         JSONObject retObject = new JSONObject();
         JSONObject data = new JSONObject();
 
-        String caseNumber = "";
-        Map<String, String> queryStringParameters = (Map<String, String>)input.get("queryStringParameters");
-        if(queryStringParameters != null ){
-            caseNumber = queryStringParameters.get("asap");
-        }
 
         DBCredentials dbCreds = new DBCredentials();
         dbCreds.setDbHost("covid-oracle.cewagdn2zv2j.us-west-2.rds.amazonaws.com");
@@ -47,7 +42,7 @@ public class AsapDetailHandler implements RequestHandler<Map<String, Object>, Ap
 
         try {
             if (Optional.ofNullable(connection).isPresent()) {
-                JSONArray details = runQuery(connection, caseNumber);
+                JSONArray details = runQuery(connection);
                 statusCode = 200;
                 retObject.put("data", details);
             } else {
@@ -71,35 +66,27 @@ public class AsapDetailHandler implements RequestHandler<Map<String, Object>, Ap
                 .build();
     }
 
-    public JSONArray runQuery(Connection connection, String caseNumber) throws JSONException {
+    public JSONArray runQuery(Connection connection) throws JSONException {
 
-        String query = "--asap detail\n" +
-                "select case_number, \"Date In\" \"actionTime\" , \"Assigned To Display Name\" \"user\",  \"Role\" \"role\", \"Step Display Name\" \"stepName\", \"Action Name\" \"actionName\"\n" +
+        String query = "SELECT DISTINCT (\"Org Code\")\n" +
                 "FROM \"ADMIN\".\"sample_data_2\"\n" +
-                "WHERE \"Date In\" IS NOT NULL\n";
-        if(!caseNumber.equals(""))query += "AND case_number = '" + caseNumber + "'";
+                "WHERE \"Org Code\" IS NOT NULL";
 
 
         PreparedStatement prepStmt = null;
         ResultSet rs = null;
-        JSONArray details = new JSONArray();
+        JSONArray orgs = new JSONArray();
 
         try {
             prepStmt = connection.prepareStatement(query);
             rs = prepStmt.executeQuery();
             while(rs.next()) {
                 JSONObject item = new JSONObject();
-                item.put("CASE_NUMBER", rs.getString("CASE_NUMBER"));
-                item.put("actionTime", rs.getString("actionTime"));
-                item.put("user", rs.getString("user"));
-                item.put("role", rs.getString("role"));
-                item.put("stepName", rs.getString("stepName"));
-                item.put("actionName", rs.getString("actionName"));
-                details.put(item);
+                orgs.put(rs.getString("Org Code"));
             }
-        } catch (SQLException | JSONException e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
-        return details;
+        return orgs;
     }
 }

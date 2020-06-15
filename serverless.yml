@@ -49,14 +49,14 @@ functions:
     events:
       - http:
           path: /sample-data-2/role-durations
-          method: post
+          method: get
           cors: true
           request:
             parameters:
               querystrings:
                 start: true
                 end: true
-                casenumber: true
+                asap: true
 
   stepDurations:
     handler: com.serverless.StepDurationsHandler
@@ -64,14 +64,14 @@ functions:
     events:
       - http:
           path: /sample-data-2/step-durations
-          method: post
+          method: get
           cors: true
           request:
             parameters:
               querystrings:
                 start: true
                 end: true
-                casenumber: true
+                asap: true
 
   ASAPInspector:
     handler: com.serverless.ASAPInspectorHandler
@@ -103,6 +103,36 @@ functions:
                 start: true
                 end: true
 
+  DetailRole:
+    handler: com.serverless.DetailRoleHandler
+    timeout: 30
+    events:
+      - http:
+          path: /sample-data-2/detail-role
+          method: post
+          cors: true
+          request:
+            parameters:
+              querystrings:
+                start: true
+                end: true
+                casenumber: true
+
+    DetailStep:
+      handler: com.serverless.DetailStepHandler
+      timeout: 30
+      events:
+        - http:
+            path: /sample-data-2/detail-step
+            method: post
+            cors: true
+            request:
+              parameters:
+                querystrings:
+                  start: true
+                  end: true
+                  casenumber: true
+
   DetailHero:
     handler: com.serverless.DetailHeroHandler
     timeout: 30
@@ -114,7 +144,7 @@ functions:
           request:
             parameters:
               querystrings:
-                casenumber: true
+                asap: true
 
   AsapDetail:
     handler: com.serverless.AsapDetailHandler
@@ -127,7 +157,7 @@ functions:
           request:
             parameters:
               querystrings:
-                casenumber: true
+                asap: true
 
   UserTime:
     handler: com.serverless.UserTimeHandler
@@ -140,4 +170,13 @@ functions:
           request:
             parameters:
               querystrings:
-                casenumber: true
+                asap: true
+
+  AllOrganizations:
+    handler: com.serverless.AllOrgsHandler
+    timeout: 30
+    events:
+      - http:
+          path: /sample-data-2/org-codes
+          method: get
+          cors: true

@@ -18,7 +18,7 @@ public class DetailHeroTest {
 
         Map<String, Object> input = new HashMap<String, Object>();
         Map<String, String> queryStringParameters = new HashMap<String, String>() ;
-        queryStringParameters.put("casenumber", "Ticket 23");
+        queryStringParameters.put("asap", "Ticket 23");
         input.put("queryStringParameters", queryStringParameters);
 
         ApiGatewayResponse response = handler.handleRequest(input, null);

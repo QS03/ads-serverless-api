@@ -7,19 +7,20 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
-public class RoleDurationsTest {
+
+public class DetailRoleTest {
     @Test
     /*
      *  Valid start date and end date
      * */
     public void StartnEndDateCase() {
-        RoleDurationsHandler handler = new RoleDurationsHandler();
+        DetailRoleHandler handler = new DetailRoleHandler();
 
         Map<String, Object> input = new HashMap<String, Object>();
         Map<String, String> queryStringParameters = new HashMap<String, String>() ;
         queryStringParameters.put("start", "2020-01-01");
         queryStringParameters.put("end", "2020-05-20");
-        queryStringParameters.put("asap", "Ticket 23");
+        queryStringParameters.put("casenumber", "Ticket 23");
         input.put("queryStringParameters", queryStringParameters);
         input.put("body",
                 "{\n" +

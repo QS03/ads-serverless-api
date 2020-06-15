@@ -32,7 +32,7 @@ public class DetailHeroHandler implements RequestHandler<Map<String, Object>, Ap
         String caseNumber = "";
         Map<String, String> queryStringParameters = (Map<String, String>)input.get("queryStringParameters");
         if(queryStringParameters != null ){
-            caseNumber = queryStringParameters.get("casenumber");
+            caseNumber = queryStringParameters.get("asap");
         }
 
         DBCredentials dbCreds = new DBCredentials();

@@ -19,7 +19,7 @@ public class StepDurationsTest {
         Map<String, String> queryStringParameters = new HashMap<String, String>() ;
         queryStringParameters.put("start", "2020-01-01");
         queryStringParameters.put("end", "2020-05-20");
-        queryStringParameters.put("casenumber", "Ticket 23");
+        queryStringParameters.put("asap", "Ticket 23");
         input.put("queryStringParameters", queryStringParameters);
         input.put("body",
                 "{\n" +

@@ -37,53 +37,15 @@ public class RoleDurationsHandler implements RequestHandler<Map<String, Object>,
         if(queryStringParameters != null ){
             startDate = queryStringParameters.get("start");
             endDate = queryStringParameters.get("end");
-            caseNumber = queryStringParameters.get("casenumber");
+            caseNumber = queryStringParameters.get("asap");
         }
 
         if (startDate == null) startDate = "1900-01-01";
         if (endDate == null) endDate = "2100-01-01";
 
-        JSONArray organizations = null;
-        try {
-            if (input.get("body") != null){
-                JSONObject body = new JSONObject((String) input.get("body"));
-                organizations = (JSONArray) body.get("organizations");
-            }
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
 
-        boolean isValidOrg = true;
-        if(organizations == null){
-            organizations = new JSONArray();
-        } else {
-            for(int i=0;  i<organizations.length(); i++){
-                try {
-                    String org = organizations.getString(i);
-                    if(!org.equals("Org 1") &&
-                            !org.equals("Org 2") &&
-                            !org.equals("Org 3") &&
-                            !org.equals("Org 4") &&
-                            !org.equals("Org 5") &&
-                            !org.equals("Org 6")){
-                        isValidOrg = false;
-                        break;
-                    }
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                    isValidOrg = false;
-                }
-            }
-        }
-        LOG.info("organizations: {}", organizations);
-        if(!isValidOrg){
-            try {
-                data.put("message", "Bad Request: Invalid Org Code");
-                retObject.put("data", data);
-            } catch (JSONException e) {
-                LOG.info("Error: {}", e);
-            }
-        } else {
+
+
             if (Validator.isValidateDate(startDate) && Validator.isValidateDate(endDate)) {
                 DBCredentials dbCreds = new DBCredentials();
                 dbCreds.setDbHost("covid-oracle.cewagdn2zv2j.us-west-2.rds.amazonaws.com");
@@ -100,7 +62,7 @@ public class RoleDurationsHandler implements RequestHandler<Map<String, Object>,
                         statusCode = 200;
                         JSONArray detailRoles = getDetailRoles(connection, caseNumber);
                         data.put("detailRoles", detailRoles);
-                        JSONArray roleDurations = getRoleDurations(connection, startDate, endDate, organizations);
+                        JSONArray roleDurations = getRoleDurations(connection, startDate, endDate);
                         data.put("roleDurations", roleDurations);
 
                     } else {
@@ -119,7 +81,7 @@ public class RoleDurationsHandler implements RequestHandler<Map<String, Object>,
                     LOG.info("Error: {}", e);
                 }
             }
-        }
+
 
         try {
             retObject.put("data", data);
@@ -139,7 +101,7 @@ public class RoleDurationsHandler implements RequestHandler<Map<String, Object>,
                 .build();
     }
 
-    public JSONArray getRoleDurations(Connection connection, String startDate, String endDate, JSONArray organizations) {
+    public JSONArray getRoleDurations(Connection connection, String startDate, String endDate) {
 
         String query = "SELECT\n" +
                 "\t\"Role\" AS \"name\",\n" +
@@ -175,13 +137,6 @@ public class RoleDurationsHandler implements RequestHandler<Map<String, Object>,
                 String.format("\tWHERE \"ASAP CREATED\" >= TO_DATE('%s', 'yyyy-MM-dd')\n", startDate) +
                 String.format("\tAND \"ASAP CREATED\" < TO_DATE('%s', 'yyyy-MM-dd')\n", endDate);
 
-        for (int i=0; i<organizations.length(); i++){
-            try {
-                query += "\tand \"Org Code\" = '" + organizations.getString(i) + "'\n";
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-        }
         query += ")\n" +
                 "WHERE \"Role\" is not NULL\n" +
                 "GROUP BY\n" +
