@@ -174,7 +174,7 @@ public class DetailStepHandler implements RequestHandler<Map<String, Object>, Ap
     JSONArray getDetailSteps(Connection connection, String caseNumber) {
 
         String query = "--detail step\n" +
-                "SELECT case_number as \"asap\", \"Step Display Name\" as \"step\", sum(\"Cycle Time - Days\") as \"avgRoleTime\"\n" +
+                "SELECT case_number as \"asap\", \"Step Display Name\" as \"step\", sum(\"Cycle Time - Days\") as \"avgStepTime\"\n" +
                 "FROM \"ADMIN\".\"sample_data_2\"\n" +
                 "WHERE \"Cycle Time - Days\" IS NOT NULL\n";
         if(!caseNumber.equals(""))query += "AND case_number = '"+ caseNumber + "'\n";
@@ -191,7 +191,7 @@ public class DetailStepHandler implements RequestHandler<Map<String, Object>, Ap
                 JSONObject item = new JSONObject();
                 item.put("asap", rs.getString("asap"));
                 item.put("step", rs.getString("step"));
-                item.put("avgRoleTime", rs.getFloat("avgRoleTime"));
+                item.put("avgStepTime", rs.getFloat("avgStepTime"));
                 detailSteps.put(item);
             }
             LOG.info("Counts: {}", detailSteps.length());
