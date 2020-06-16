@@ -23,8 +23,8 @@ public class RoleDurationsTest {
         input.put("queryStringParameters", queryStringParameters);
         input.put("body",
                 "{\n" +
-                        "\t\"organizations\": [\"Org 1\"]\n" +
-                        "}"
+                   "\t\"organizations\": [\"Org 1\"]\n" +
+                "}"
         );
 
         ApiGatewayResponse response = handler.handleRequest(input, null);

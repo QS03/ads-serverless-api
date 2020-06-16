@@ -59,9 +59,10 @@ public class DetailStepHandler implements RequestHandler<Map<String, Object>, Ap
                     if (Optional.ofNullable(connection).isPresent()) {
                         statusCode = 200;
                         JSONArray detailSteps = getDetailSteps(connection, caseNumber);
-                        JSONArray stepDurations = getStepDurations(connection, startDate, endDate);
                         data.put("detailSteps", detailSteps);
-                        data.put("stepDurations", stepDurations);
+
+                        // JSONArray stepDurations = getStepDurations(connection, startDate, endDate);
+                        // data.put("stepDurations", stepDurations);
                     } else {
                         statusCode = 501;
                         data.put("message", "Server error!");

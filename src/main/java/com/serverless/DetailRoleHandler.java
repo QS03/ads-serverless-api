@@ -61,8 +61,8 @@ public class DetailRoleHandler implements RequestHandler<Map<String, Object>, Ap
 
                         JSONArray detailRoles = getDetailRoles(connection, caseNumber);
                         data.put("detailRoles", detailRoles);
-                        JSONArray roleDurations = getRoleDurations(connection, startDate, endDate);
-                        data.put("roleDurations", roleDurations);
+                        // JSONArray roleDurations = getRoleDurations(connection, startDate, endDate);
+                        // data.put("roleDurations", roleDurations);
 
                     } else {
                         statusCode = 501;

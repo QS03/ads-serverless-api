@@ -21,7 +21,7 @@ public class ASAPInspectorTest {
 
         input.put("body",
                 "{\n" +
-
+                        "\t\"organizations\": [\"Org 1\"]\n" +
                 "}"
         );
 
