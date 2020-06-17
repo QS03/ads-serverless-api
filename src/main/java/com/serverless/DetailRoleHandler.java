@@ -59,10 +59,8 @@ public class DetailRoleHandler implements RequestHandler<Map<String, Object>, Ap
                     if (Optional.ofNullable(connection).isPresent()) {
                         statusCode = 200;
 
-                        JSONArray detailRoles = getDetailRoles(connection, caseNumber);
+                        JSONArray detailRoles = getDetailRoles(connection, startDate, endDate, caseNumber);
                         data.put("detailRoles", detailRoles);
-                        // JSONArray roleDurations = getRoleDurations(connection, startDate, endDate);
-                        // data.put("roleDurations", roleDurations);
 
                     } else {
                         statusCode = 501;
@@ -164,24 +162,65 @@ public class DetailRoleHandler implements RequestHandler<Map<String, Object>, Ap
         return roleDurations;
     }
 
-    JSONArray getDetailRoles(Connection connection, String caseNumber) {
-        String query = "--detail role\n" +
-                "SELECT case_number as \"asap\", \"Role\" as \"role\", sum(\"Cycle Time - Days\") as \"avgRoleTime\"\n" +
-                "FROM \"ADMIN\".\"sample_data_2\"\n" +
-                "WHERE \"Cycle Time - Days\" IS NOT NULL\n";
-        if(!caseNumber.equals(""))query += "AND case_number = '"+ caseNumber + "'\n";
-        query += "GROUP BY CASE_NUMBER, \"Role\"";
+    JSONArray getDetailRoles(Connection connection, String startDate, String endDate, String caseNumber) {
+        String query = "WITH roledurations as (SELECT\n" +
+                "\t\"Role\" AS \"name\",\n" +
+                "\tAVG(\"Cycle Time - Days\") AS \"averageDuration\",\n" +
+                "\tMIN(\"Cycle Time - Days\") AS \"min\",\n" +
+                "\tMAX(\"Cycle Time - Days\") AS \"max\",\n" +
+                "\tCASE WHEN \"Role\" = 'Role 1' THEN 3\n" +
+                "\tWHEN \"Role\" = 'Role 2' THEN 2\n" +
+                "\tWHEN \"Role\" = 'Role 3' THEN 2\n" +
+                "\tWHEN \"Role\" = 'Role 4' THEN 1\n" +
+                "\tEND AS \"standardMin\",\n" +
+                "\tCASE WHEN \"Role\" = 'Role 1' THEN 9\n" +
+                "\tWHEN \"Role\" = 'Role 2' THEN 4\n" +
+                "\tWHEN \"Role\" = 'Role 3' THEN 6\n" +
+                "\tWHEN \"Role\" = 'Role 4' THEN 3\n" +
+                "\tEND AS \"standardMax\"\n" +
+                "FROM (\n" +
+                "\tSELECT\n" +
+                "\t\tCASE_NUMBER, \"ASAP CREATED\", \"Role\", \"Date In\", \"Date Out\",\n" +
+                "\t\tCASE WHEN \"Date Out\" IS NULL AND \"Date In\" IS NOT NULL THEN trunc(cast(CURRENT_TIMESTAMP AS date) - \"Date In\", 2)\n" +
+                "\t\tELSE CAST(\"Cycle Time - Days\" AS NUMBER)\n" +
+                "\t\tEND AS \"Cycle Time - Days\",\n" +
+                "\t\tCASE WHEN \"Date Out\" IS NULL AND \"Date In\" IS NOT NULL THEN trunc((cast(CURRENT_TIMESTAMP AS date) - \"Date In\") * 24, 2)\n" +
+                "\t\tELSE CAST(\"Cycle Time - Hours\" AS NUMBER)\n" +
+                "\t\tEND AS \"Cycle Time - Hours\",\n" +
+                "\t\t\"ASAP Status\"\n" +
+                "\tFROM \"ADMIN\".\"sample_data_2\"\n" +
+                "\t--DATE FILTER HERE:\n" +
+                String.format("\tWHERE \"ASAP CREATED\" >= TO_DATE('%s', 'yyyy-MM-dd')\n", startDate) +
+                String.format("\tAND \"ASAP CREATED\" < TO_DATE('%s', 'yyyy-MM-dd')\n", endDate) +
+                "\t)\n" +
+                "WHERE \"Role\" is not NULL\n" +
+                "GROUP BY\n" +
+                "\t\"Role\"),\n" +
+                "detailrole as(\n" +
+                "\tSELECT case_number as \"asap\", \"Role\" as \"name\", sum(\"Cycle Time - Days\") as \"avgRoleTime\"\n" +
+                "\tFROM \"ADMIN\".\"sample_data_2\"\n" +
+                "\tWHERE \"Cycle Time - Days\" IS NOT NULL\n" +
+                "\t--ASAP FILTER HERE: \n";
+                if(!caseNumber.equals(""))query += "AND case_number = '"+ caseNumber + "'\n";
+                query += "\tGROUP BY CASE_NUMBER, \"Role\")\n" +
+                "select a.*, b.\"avgRoleTime\" from roledurations a left join detailrole b on a.\"name\" = b.\"name\"";
 
-        // LOG.info("getDetailRoles query: {}", query);
+
+                LOG.info("getDetailRoles query: {}", query);
+
         JSONArray detailRoles = new JSONArray();
         try {
             PreparedStatement prepStmt = connection.prepareStatement(query);
             ResultSet rs = prepStmt.executeQuery();
             while (rs.next()){
                 JSONObject item = new JSONObject();
-                item.put("asap", rs.getString("asap"));
-                item.put("role", rs.getString("role"));
-                item.put("avgRoleTime", rs.getFloat("avgRoleTime"));
+                item.put("name", rs.getString("name"));
+                item.put("averageDuration", rs.getFloat("averageDuration"));
+                item.put("min", rs.getFloat("min"));
+                item.put("max", rs.getFloat("max"));
+                item.put("standardMin", rs.getFloat("standardMin"));
+                item.put("standardMax", rs.getFloat("standardMax"));
+                item.put("avgTime", rs.getFloat("avgRoleTime"));
                 detailRoles.put(item);
             }
             LOG.info("Counts: {}", detailRoles.length());

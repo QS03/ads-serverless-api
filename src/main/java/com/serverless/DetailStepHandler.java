@@ -58,11 +58,8 @@ public class DetailStepHandler implements RequestHandler<Map<String, Object>, Ap
                 try {
                     if (Optional.ofNullable(connection).isPresent()) {
                         statusCode = 200;
-                        JSONArray detailSteps = getDetailSteps(connection, caseNumber);
+                        JSONArray detailSteps = getDetailSteps(connection, startDate, endDate, caseNumber);
                         data.put("detailSteps", detailSteps);
-
-                        // JSONArray stepDurations = getStepDurations(connection, startDate, endDate);
-                        // data.put("stepDurations", stepDurations);
                     } else {
                         statusCode = 501;
                         data.put("message", "Server error!");
@@ -100,9 +97,10 @@ public class DetailStepHandler implements RequestHandler<Map<String, Object>, Ap
                 .build();
     }
 
-    public JSONArray getStepDurations(Connection connection, String startDate, String endDate) {
+    JSONArray getDetailSteps(Connection connection, String startDate, String endDate,String caseNumber) {
 
-        String query = "SELECT\n" +
+        String query = "--For Step Average, min, max\n" +
+                "WITH stepdurations as ( SELECT\n" +
                 "\t\"Step Display Name\" AS \"name\",\n" +
                 "\tAVG(\"Cycle Time - Days\") AS \"averageDuration\",\n" +
                 "\tMIN(\"Cycle Time - Days\") AS \"min\",\n" +
@@ -115,41 +113,52 @@ public class DetailStepHandler implements RequestHandler<Map<String, Object>, Ap
                 "\tWHEN \"Step Display Name\" = 'Step Display Name 7' THEN 1\n" +
                 "\tWHEN \"Step Display Name\" = 'Step Display Name 8' THEN 1\n" +
                 "\tWHEN \"Step Display Name\" = 'Step Display Name 9' THEN 1\n" +
+                "\tWHEN \"Step Display Name\" = 'Step Display Name 10' THEN 1\n" +
+                "\tWHEN \"Step Display Name\" = 'Step Display Name 12' THEN 1\n" +
                 "\tEND AS \"standardMin\",\n" +
                 "\tCASE WHEN \"Step Display Name\" = 'Step Display Name 2' THEN 3\n" +
                 "\tWHEN \"Step Display Name\" = 'Step Display Name 3' THEN 3\n" +
-                "\tWHEN \"Step Display Name\" = 'Step Display Name 4' THEN 3\n" +
+                "\tWHEN \"Step Display Name\" = 'Step Display Name 4' THEN 1\n" +
                 "\tWHEN \"Step Display Name\" = 'Step Display Name 5' THEN 3\n" +
                 "\tWHEN \"Step Display Name\" = 'Step Display Name 6' THEN 1\n" +
-                "\tWHEN \"Step Display Name\" = 'Step Display Name 7' THEN 5\n" +
-                "\tWHEN \"Step Display Name\" = 'Step Display Name 8' THEN 1\n" +
+                "\tWHEN \"Step Display Name\" = 'Step Display Name 7' THEN 3\n" +
+                "\tWHEN \"Step Display Name\" = 'Step Display Name 8' THEN 3\n" +
                 "\tWHEN \"Step Display Name\" = 'Step Display Name 9' THEN 3\n" +
+                "\tWHEN \"Step Display Name\" = 'Step Display Name 10' THEN 1\n" +
+                "\tWHEN \"Step Display Name\" = 'Step Display Name 12' THEN 3\n" +
                 "\tEND AS \"standardMax\"\n" +
                 "FROM (\n" +
                 "\tSELECT\n" +
-                "\t\tCASE_NUMBER,\n" +
-                "\t\t\"ASAP CREATED\",\n" +
-                "\t\t\"Step Display Name\",\n" +
-                "\t\t\"Date In\",\n" +
-                "\t\t\"Date Out\",\n" +
-                "\t\tCASE WHEN \"Date Out\" IS NULL AND \"Date In\" IS NOT NULL THEN \n" +
-                "\t\ttrunc(cast(CURRENT_TIMESTAMP AS date) - \"Date In\", 2)\n" +
+                "\t\tCASE_NUMBER, \"ASAP CREATED\", \"Step Display Name\", \"Date In\", \"Date Out\",\n" +
+                "\t\tCASE WHEN \"Date Out\" IS NULL AND \"Date In\" IS NOT NULL THEN trunc(cast(CURRENT_TIMESTAMP AS date) - \"Date In\", 2)\n" +
                 "\t\tELSE CAST(\"Cycle Time - Days\" AS NUMBER)\n" +
                 "\t\tEND AS \"Cycle Time - Days\",\n" +
                 "\t\tCASE WHEN \"Date Out\" IS NULL AND \"Date In\" IS NOT NULL THEN trunc((cast(CURRENT_TIMESTAMP AS date) - \"Date In\") * 24, 2)\n" +
                 "\t\tELSE CAST(\"Cycle Time - Hours\" AS NUMBER)\n" +
-                "\t\tEND AS \"Cycle Time - Hours\",\n" +
+                "\t\tEND AS \"Cycle Time - Hours\", \n" +
                 "\t\t\"ASAP Status\"\n" +
+                "\tFROM ADMIN. \"sample_data_2\" \n" +
+                "\tWHERE\n" +
+                "\t\tCASE WHEN \"Date Out\" IS NULL AND \"Date In\" IS NOT NULL THEN trunc(cast(CURRENT_TIMESTAMP AS date) - \"Date In\", 2)\n" +
+                "\t\tELSE CAST(\"Cycle Time - Days\" AS NUMBER)\n" +
+                "\t\tEND < 1000) a\n" +
+                "WHERE\n" +
+                "\t\"Step Display Name\" IS NOT NULL\n" +
+                String.format("\tAND \"ASAP CREATED\" >= TO_DATE('%s', 'yyyy-MM-dd')\n", startDate) +
+                String.format("\tAND \"ASAP CREATED\" < TO_DATE('%s', 'yyyy-MM-dd')\n", endDate) +
+                "GROUP BY \"Step Display Name\"\n" +
+                "ORDER BY \"Step Display Name\" ASC),\n" +
+                "detailrole as (SELECT case_number AS \"asap\", \"Step Display Name\" AS \"name\", sum(\"Cycle Time - Days\") AS \"avgStepTime\"\n" +
                 "\tFROM \"ADMIN\".\"sample_data_2\"\n" +
-                String.format("\tWHERE \"ASAP CREATED\" >= TO_DATE('%s', 'yyyy-MM-dd')\n", startDate) +
-                String.format("\tAND \"ASAP CREATED\" < TO_DATE('%s', 'yyyy-MM-dd')\n", endDate);
+                "\tWHERE \"Cycle Time - Days\" IS NOT NULL\n";
+                if(!caseNumber.equals(""))query += "AND case_number = '"+ caseNumber + "'\n";
+                query += "\tGROUP BY CASE_NUMBER, \"Step Display Name\")\n" +
+                "select a.*, b.\"avgStepTime\" from stepdurations a left join detailrole b on a.\"name\" = b.\"name\"";
 
-        query += ")\n" +
-                "WHERE \"Step Display Name\" is not NULL\n" +
-                "GROUP BY\n" +
-                "\t\"Step Display Name\"";
+        LOG.info("getDetailSteps query: {}", query);
 
-        JSONArray stepDurations = new JSONArray();
+
+        JSONArray detailSteps = new JSONArray();
         try {
             PreparedStatement prepStmt = connection.prepareStatement(query);
             ResultSet rs = prepStmt.executeQuery();
@@ -161,37 +170,7 @@ public class DetailStepHandler implements RequestHandler<Map<String, Object>, Ap
                 item.put("max", rs.getFloat("max"));
                 item.put("standardMin", rs.getFloat("standardMin"));
                 item.put("standardMax", rs.getFloat("standardMax"));
-                stepDurations.put(item);
-            }
-            LOG.info("Counts: {}", stepDurations.length());
-        } catch (SQLException | JSONException e) {
-            e.printStackTrace();
-        };
-
-        return stepDurations;
-    }
-
-    JSONArray getDetailSteps(Connection connection, String caseNumber) {
-
-        String query = "--detail step\n" +
-                "SELECT case_number as \"asap\", \"Step Display Name\" as \"step\", sum(\"Cycle Time - Days\") as \"avgStepTime\"\n" +
-                "FROM \"ADMIN\".\"sample_data_2\"\n" +
-                "WHERE \"Cycle Time - Days\" IS NOT NULL\n";
-        if(!caseNumber.equals(""))query += "AND case_number = '"+ caseNumber + "'\n";
-        query += "GROUP BY CASE_NUMBER, \"Step Display Name\"";
-
-        LOG.info("getDetailSteps query: {}", query);
-
-
-        JSONArray detailSteps = new JSONArray();
-        try {
-            PreparedStatement prepStmt = connection.prepareStatement(query);
-            ResultSet rs = prepStmt.executeQuery();
-            while (rs.next()){
-                JSONObject item = new JSONObject();
-                item.put("asap", rs.getString("asap"));
-                item.put("step", rs.getString("step"));
-                item.put("avgStepTime", rs.getFloat("avgStepTime"));
+                item.put("avgTime", rs.getFloat("avgStepTime"));
                 detailSteps.put(item);
             }
             LOG.info("Counts: {}", detailSteps.length());
