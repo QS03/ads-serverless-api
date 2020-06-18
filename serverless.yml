@@ -180,3 +180,13 @@ functions:
           path: /sample-data-2/org-codes
           method: get
           cors: true
+
+  AsapList:
+    handler: com.serverless.AsapListHandler
+    timeout: 30
+    events:
+      - http:
+          path: /sample-data-2/asaplist
+          method: get
+          cors: true
+
