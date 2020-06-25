@@ -64,9 +64,16 @@ public class AsapDetailHandler implements RequestHandler<Map<String, Object>, Ap
         headers.put("Access-Control-Allow-Origin", "*");
         headers.put("Access-Control-Allow-Headers", "Content-Type, Origin, Access-Control-Allow-Headers");
 
+        String response = "";
+        try {
+            response = retObject.toString(4);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
         return ApiGatewayResponse.builder()
                 .setStatusCode(statusCode)
-                .setRawBody(retObject.toString())
+                .setRawBody(response)
                 .setHeaders(headers)
                 .build();
     }
@@ -77,7 +84,7 @@ public class AsapDetailHandler implements RequestHandler<Map<String, Object>, Ap
                 "select case_number, \"Date In\" \"actionTime\" , \"Assigned To Display Name\" \"user\",  \"Role\" \"role\", \"Step Display Name\" \"stepName\", \"Action Name\" \"actionName\"\n" +
                 "FROM \"ADMIN\".\"sample_data_2\"\n" +
                 "WHERE \"Date In\" IS NOT NULL\n";
-        if(!caseNumber.equals(""))query += "AND case_number = '" + caseNumber + "'";
+        if(!caseNumber.equals(""))query += "AND case_number = '" + caseNumber + "' ORDER BY \"actionTime\" ASC";
 
 
         PreparedStatement prepStmt = null;
