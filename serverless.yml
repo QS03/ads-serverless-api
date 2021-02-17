@@ -19,7 +19,7 @@ service: ads-sls-api
 provider:
   name: aws
   region: us-west-2
-  profile: impakt
+  profile: default
   runtime: java8
   stage: ${opt:stage, 'dev'}
 

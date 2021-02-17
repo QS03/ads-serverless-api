@@ -15,7 +15,7 @@ Please reference [here](https://docs.aws.amazon.com/cli/latest/userguide/cli-cha
 ### 4. Configuring the AWS CLI
 
 ```
-$ aws configure --profile impakt
+$ aws configure
 AWS Access Key ID [None]: < Your AWS Access Key ID here>
 AWS Secret Access Key [None]:  < Your AWS Secret Access Key here>
 Default region name [None]: us-east-1

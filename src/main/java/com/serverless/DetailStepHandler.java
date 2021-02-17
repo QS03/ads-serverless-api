@@ -45,10 +45,10 @@ public class DetailStepHandler implements RequestHandler<Map<String, Object>, Ap
 
             if (Validator.isValidateDate(startDate) && Validator.isValidateDate(endDate)) {
                 DBCredentials dbCreds = new DBCredentials();
-                dbCreds.setDbHost("covid-oracle.cewagdn2zv2j.us-west-2.rds.amazonaws.com");
+                dbCreds.setDbHost("covid-oracle.xxxxxxx.us-west-2.rds.amazonaws.com");
                 dbCreds.setDbPort("1521");
                 dbCreds.setUserName("admin");
-                dbCreds.setPassword("8iEkGjQgFJzOblCihFaz");
+                dbCreds.setPassword("xxxxxxx");
                 dbCreds.setDbName("orcl");
 
                 DBConnection dbConnection = new DBConnection();

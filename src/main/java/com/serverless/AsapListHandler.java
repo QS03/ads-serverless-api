@@ -31,10 +31,10 @@ public class AsapListHandler implements RequestHandler<Map<String, Object>, ApiG
 
 
         DBCredentials dbCreds = new DBCredentials();
-        dbCreds.setDbHost("covid-oracle.cewagdn2zv2j.us-west-2.rds.amazonaws.com");
+        dbCreds.setDbHost("covid-oracle.xxxxxxx.us-west-2.rds.amazonaws.com");
         dbCreds.setDbPort("1521");
         dbCreds.setUserName("admin");
-        dbCreds.setPassword("8iEkGjQgFJzOblCihFaz");
+        dbCreds.setPassword("xxxxxxx");
         dbCreds.setDbName("orcl");
 
         DBConnection dbConnection = new DBConnection();
